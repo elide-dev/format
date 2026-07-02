@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  pull_request: {}
+  merge_group: {}
+  push:
+    branches:
+      - main
+      - 'releases/*'
+
+jobs:
+  test-typescript:
+    name: "Test: Unit Tests"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+        with:
+          egress-policy: audit
+
+      - name: "Setup: Checkout"
+        id: checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: "Setup: Node"
+        id: setup-node
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 24
+
+      - name: "Setup: Bun"
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: latest
+
+      - name: "Setup: Install Dependencies"
+        id: install
+        run: bun install --frozen-lockfile
+
+      - name: Check Format
+        id: format-check
+        run: bun run format:check
+
+      - name: Lint
+        id: lint
+        run: bun run lint
+
+      - name: Test
+        id: test
+        run: bun run test:ci
+
+      - name: "Upload: Test Results"
+        if: ${{ !cancelled() && hashFiles('test-results/**') != '' }}
+        uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6.0.0
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          report_type: test_results
+          files: test-results/batch1.xml,test-results/batch2.xml,test-results/batch3.xml,test-results/batch4.xml
+          fail_ci_if_error: false
+
+      - name: "Upload: Coverage"
+        if: ${{ !cancelled() && hashFiles('coverage/**') != '' }}
+        uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6.0.0
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: ./coverage
+          files: coverage/lcov.info
+          fail_ci_if_error: false
+
+      - name: Build
+        run: bun run build
+
+      - name: "Upload: Bundle Analysis"
+        if: ${{ !cancelled() }}
+        run: |
+          bun x @codecov/bundle-analyzer ./dist \
+            --bundle-name=format \
+            --upload-token=${{ secrets.CODECOV_TOKEN }} \
+            --config-file=codecov-bundle.json
+        continue-on-error: true

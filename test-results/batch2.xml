@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="17" assertions="28" failures="0" skipped="0" time="0.034535714">
+  <testsuite name="__tests__/telemetry.test.ts" file="__tests__/telemetry.test.ts" tests="17" assertions="28" failures="0" skipped="0" time="0" hostname="JESSICA">
+    <testsuite name="telemetry" file="__tests__/telemetry.test.ts" line="35" tests="17" assertions="28" failures="0" skipped="0" time="0" hostname="JESSICA">
+      <testcase name="should not initialize Sentry when disabled" classname="telemetry" time="0.000125" file="__tests__/telemetry.test.ts" line="47" assertions="1" />
+      <testcase name="should initialize Sentry when enabled" classname="telemetry" time="0.000062" file="__tests__/telemetry.test.ts" line="53" assertions="1" />
+      <testcase name="should set action config tags on init" classname="telemetry" time="0.000025" file="__tests__/telemetry.test.ts" line="65" assertions="1" />
+      <testcase name="should strip sensitive data in beforeSend" classname="telemetry" time="0.000422" file="__tests__/telemetry.test.ts" line="77" assertions="6" />
+      <testcase name="should strip sensitive data in beforeSendTransaction" classname="telemetry" time="0.00004" file="__tests__/telemetry.test.ts" line="100" assertions="3" />
+      <testcase name="should scrub exception values of env var secrets" classname="telemetry" time="0.0002" file="__tests__/telemetry.test.ts" line="118" assertions="3" />
+      <testcase name="should report errors via captureException" classname="telemetry" time="0.000074" file="__tests__/telemetry.test.ts" line="151" assertions="1" />
+      <testcase name="should report errors with context tags" classname="telemetry" time="0.00004" file="__tests__/telemetry.test.ts" line="158" assertions="1" />
+      <testcase name="should not report errors when disabled" classname="telemetry" time="0.000016" file="__tests__/telemetry.test.ts" line="171" assertions="1" />
+      <testcase name="withSpan should call Sentry.startSpan when enabled" classname="telemetry" time="0.000125" file="__tests__/telemetry.test.ts" line="179" assertions="2" />
+      <testcase name="withSpan should run function directly when disabled" classname="telemetry" time="0.000052" file="__tests__/telemetry.test.ts" line="189" assertions="2" />
+      <testcase name="recordMetric should call metrics.gauge when enabled" classname="telemetry" time="0.000128" file="__tests__/telemetry.test.ts" line="198" assertions="1" />
+      <testcase name="recordMetric should no-op when disabled" classname="telemetry" time="0.000028" file="__tests__/telemetry.test.ts" line="207" assertions="1" />
+      <testcase name="logEvent should call captureMessage when enabled" classname="telemetry" time="0.000032" file="__tests__/telemetry.test.ts" line="215" assertions="1" />
+      <testcase name="logEvent should no-op when disabled" classname="telemetry" time="0.00001" file="__tests__/telemetry.test.ts" line="224" assertions="1" />
+      <testcase name="should flush pending events" classname="telemetry" time="0.000059" file="__tests__/telemetry.test.ts" line="232" assertions="1" />
+      <testcase name="should not flush when disabled" classname="telemetry" time="0.000028" file="__tests__/telemetry.test.ts" line="238" assertions="1" />
+    </testsuite>
+  </testsuite>
+</testsuites>

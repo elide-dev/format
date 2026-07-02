@@ -1,0 +1,169 @@
+import * as Sentry from '@sentry/node'
+import type { Event } from '@sentry/node'
+import type { ElideFormatActionOptions } from './options'
+
+// Public DSN — not a secret. Only allows sending events, not reading them.
+const SENTRY_DSN =
+  'https://b5a33745f4bf36a0f1e66dbcfceaa898@o4510814125228032.ingest.us.sentry.io/4511124523974656'
+
+const ACTION_VERSION = '1.0.0'
+
+let telemetryEnabled = false
+
+// Environment variable patterns that could contain secrets.
+const SENSITIVE_PATTERNS = [
+  /token/i,
+  /secret/i,
+  /password/i,
+  /key/i,
+  /credential/i,
+  /auth/i,
+  /^GITHUB_/i,
+  /^AWS_/i,
+  /^AZURE_/i,
+  /^GCP_/i,
+  /^NPM_/i,
+  /^NODE_AUTH/i
+]
+
+/**
+ * Scrub a string of any values that look like they came from sensitive env vars.
+ * Replaces any known env var value found in the string with [REDACTED].
+ */
+function scrubEnvVars(input: string): string {
+  let result = input
+  for (const [key, value] of Object.entries(process.env)) {
+    if (!value || value.length < 8) continue
+    if (SENSITIVE_PATTERNS.some(p => p.test(key))) {
+      result = result.replaceAll(value, '[REDACTED]')
+    }
+  }
+  return result
+}
+
+/**
+ * Scrub an entire Sentry event of sensitive data.
+ */
+function scrubEvent(event: Event): Event {
+  delete event.server_name
+  delete event.extra
+  delete event.user
+  delete event.request
+  event.contexts = {}
+  event.breadcrumbs = []
+
+  if (event.exception?.values) {
+    for (const ex of event.exception.values) {
+      if (ex.value) {
+        ex.value = scrubEnvVars(ex.value)
+      }
+    }
+  }
+
+  if (event.message) {
+    event.message = scrubEnvVars(event.message)
+  }
+
+  return event
+}
+
+/**
+ * Initialize Sentry telemetry with aggressive scrubbing.
+ * Enables error reporting, tracing, and metrics.
+ * No environment data, no PII, no secrets — only the error/span and action config tags.
+ */
+export function initTelemetry(
+  enabled: boolean,
+  options: ElideFormatActionOptions
+): void {
+  telemetryEnabled = enabled
+  if (!enabled) return
+
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    defaultIntegrations: false,
+    environment: 'production',
+    release: `format@${ACTION_VERSION}`,
+    tracesSampleRate: 1.0,
+    beforeSend(event) {
+      return scrubEvent(event)
+    },
+    beforeSendTransaction(event) {
+      return scrubEvent(event)
+    }
+  })
+
+  Sentry.setTags({
+    formatter: options.formatter,
+    mode: options.mode,
+    action_version: ACTION_VERSION
+  })
+}
+
+/**
+ * Report an error to Sentry with optional additional tags.
+ */
+export function reportError(
+  err: Error,
+  context?: Record<string, string>
+): void {
+  if (!telemetryEnabled) return
+
+  Sentry.withScope(scope => {
+    if (context) {
+      for (const [k, v] of Object.entries(context)) {
+        scope.setTag(k, v)
+      }
+    }
+    Sentry.captureException(err)
+  })
+}
+
+/**
+ * Run an async function inside a Sentry tracing span.
+ * If telemetry is disabled, runs the function directly.
+ */
+export async function withSpan<T>(
+  name: string,
+  op: string,
+  fn: () => Promise<T>
+): Promise<T> {
+  if (!telemetryEnabled) return fn()
+
+  return Sentry.startSpan(
+    { name, op, attributes: { 'sentry.origin': 'manual' } },
+    async () => fn()
+  )
+}
+
+/**
+ * Record a metric gauge value (e.g., install duration).
+ */
+export function recordMetric(
+  name: string,
+  value: number,
+  unit: string,
+  tags?: Record<string, string>
+): void {
+  if (!telemetryEnabled) return
+  Sentry.metrics.gauge(name, value, { unit, tags })
+}
+
+/**
+ * Log an informational event to Sentry.
+ */
+export function logEvent(message: string, data?: Record<string, string>): void {
+  if (!telemetryEnabled) return
+  Sentry.captureMessage(message, {
+    level: 'info',
+    tags: data
+  })
+}
+
+/**
+ * Flush pending Sentry events. Call before process exit.
+ */
+export async function flushTelemetry(): Promise<void> {
+  if (!telemetryEnabled) return
+  await Sentry.flush(2000)
+}

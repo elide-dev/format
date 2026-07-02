@@ -1,0 +1,76 @@
+{
+  "name": "@elide-dev/format",
+  "description": "GitHub Action to check source formatting using Elide",
+  "version": "1.0.0",
+  "author": "Elide Team (https://elide.dev)",
+  "private": true,
+  "homepage": "https://github.com/elide-dev/format",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/elide-dev/format.git"
+  },
+  "bugs": {
+    "url": "https://github.com/elide-dev/format/issues"
+  },
+  "keywords": [
+    "actions",
+    "format",
+    "elide",
+    "google-java-format",
+    "ktfmt",
+    "java",
+    "kotlin"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@actions/core": "3.0.0",
+    "@actions/exec": "3.0.0",
+    "@sentry/node": "^10.46.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.9",
+    "@commitlint/cli": "20.5.0",
+    "@commitlint/config-conventional": "20.5.0",
+    "@types/bun": "latest",
+    "@types/node": "25.5.0",
+    "husky": "9.1.7",
+    "oxlint": "^1.57.0",
+    "typescript": "6.0.2"
+  },
+  "scripts": {
+    "turbo:build": "bun run turbo build --token $BUILDLESS_APIKEY --no-daemon --remote-only",
+    "turbo:test": "bun run turbo test --token $BUILDLESS_APIKEY --no-daemon --remote-only",
+    "build": "bun run bundle",
+    "bundle": "bun run format:write && bun run package",
+    "ci:build": "bun run turbo:build",
+    "ci:test": "bun run turbo:test",
+    "format:write": "biome format --write src __tests__",
+    "format:check": "biome format src __tests__",
+    "lint": "oxlint src __tests__",
+    "package": "bun build src/index.ts src/post.ts --outdir=dist --target=node --minify --sourcemap=linked",
+    "package:watch": "bun build src/index.ts src/post.ts --outdir=dist --target=node --sourcemap=linked --watch",
+    "test": "rm -rf coverage && bun test __tests__/command.test.ts && cp coverage/lcov.info coverage/batch1.info && bun test __tests__/telemetry.test.ts && cp coverage/lcov.info coverage/batch2.info && bun test __tests__/main.test.ts && cp coverage/lcov.info coverage/batch3.info && bun test __tests__/options.test.ts __tests__/index.test.ts && cp coverage/lcov.info coverage/batch4.info && cat coverage/batch*.info > coverage/lcov.info",
+    "test:ci": "rm -rf coverage test-results && mkdir -p test-results && bun test --reporter=junit --reporter-outfile=test-results/batch1.xml __tests__/command.test.ts && cp coverage/lcov.info coverage/batch1.info && bun test --reporter=junit --reporter-outfile=test-results/batch2.xml __tests__/telemetry.test.ts && cp coverage/lcov.info coverage/batch2.info && bun test --reporter=junit --reporter-outfile=test-results/batch3.xml __tests__/main.test.ts && cp coverage/lcov.info coverage/batch3.info && bun test --reporter=junit --reporter-outfile=test-results/batch4.xml __tests__/options.test.ts __tests__/index.test.ts && cp coverage/lcov.info coverage/batch4.info && cat coverage/batch*.info > coverage/lcov.info",
+    "test:docker": "docker build -t format-test . && docker run --rm format-test sh -c 'bun run build && bun run test'",
+    "all": "bun run format:write && bun run build && bun run test"
+  },
+  "license": "MIT",
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ],
+    "rules": {
+      "signed-off-by": [
+        2,
+        "always",
+        "Signed-off-by:"
+      ]
+    }
+  }
+}

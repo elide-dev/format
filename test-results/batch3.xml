@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="48" assertions="69" failures="0" skipped="0" time="0.01549191">
+  <testsuite name="__tests__/main.test.ts" file="__tests__/main.test.ts" tests="48" assertions="69" failures="0" skipped="0" time="0" hostname="JESSICA">
+    <testsuite name="findFiles" file="__tests__/main.test.ts" line="109" tests="4" assertions="6" failures="0" skipped="0" time="0" hostname="JESSICA">
+      <testcase name="should return files with the matching extension" classname="findFiles" time="0.000416" file="__tests__/main.test.ts" line="112" assertions="2" />
+      <testcase name="should skip files inside excluded directories" classname="findFiles" time="0.000036" file="__tests__/main.test.ts" line="119" assertions="2" />
+      <testcase name="should return empty array when no matching files exist" classname="findFiles" time="0.000018" file="__tests__/main.test.ts" line="132" assertions="1" />
+      <testcase name="should return all matching files at any depth" classname="findFiles" time="0.000016" file="__tests__/main.test.ts" line="138" assertions="1" />
+    </testsuite>
+    <testsuite name="resolveFiles" file="__tests__/main.test.ts" line="149" tests="10" assertions="15" failures="0" skipped="0" time="0" hostname="JESSICA">
+      <testcase name="should return resolved files from options when provided" classname="resolveFiles" time="0.000167" file="__tests__/main.test.ts" line="155" assertions="1" />
+      <testcase name="should resolve relative paths against working_directory" classname="resolveFiles" time="0.000021" file="__tests__/main.test.ts" line="166" assertions="1" />
+      <testcase name="should expand directory entries" classname="resolveFiles" time="0.000042" file="__tests__/main.test.ts" line="177" assertions="2" />
+      <testcase name="should scan for .java files for javaformat when no files provided" classname="resolveFiles" time="0.000027" file="__tests__/main.test.ts" line="189" assertions="1" />
+      <testcase name="should scan for .kt files for ktfmt when no files provided" classname="resolveFiles" time="0.000019" file="__tests__/main.test.ts" line="196" assertions="1" />
+      <testcase name="should return empty array when no files found by extension scan" classname="resolveFiles" time="0.000012" file="__tests__/main.test.ts" line="203" assertions="1" />
+      <testcase name="should not include .kts files for ktfmt by default" classname="resolveFiles" time="0.000039" file="__tests__/main.test.ts" line="208" assertions="2" />
+      <testcase name="should include .kts files for ktfmt when include_kts is true" classname="resolveFiles" time="0.000054" file="__tests__/main.test.ts" line="216" assertions="2" />
+      <testcase name="should never include .kts files for javaformat" classname="resolveFiles" time="0.000043" file="__tests__/main.test.ts" line="228" assertions="2" />
+      <testcase name="should expand directory into .kt and .kts when include_kts is true" classname="resolveFiles" time="0.000053" file="__tests__/main.test.ts" line="240" assertions="2" />
+    </testsuite>
+    <testsuite name="matchesExcludePattern" file="__tests__/main.test.ts" line="256" tests="6" assertions="7" failures="0" skipped="0" time="0" hostname="JESSICA">
+      <testcase name="should match a plain directory name as a path segment" classname="matchesExcludePattern" time="0.000072" file="__tests__/main.test.ts" line="257" assertions="1" />
+      <testcase name="should match a plain path prefix" classname="matchesExcludePattern" time="0.000013" file="__tests__/main.test.ts" line="263" assertions="1" />
+      <testcase name="should not match a plain string that is not a segment" classname="matchesExcludePattern" time="0.000009" file="__tests__/main.test.ts" line="272" assertions="1" />
+      <testcase name="should match a ** glob pattern" classname="matchesExcludePattern" time="0.000042" file="__tests__/main.test.ts" line="278" assertions="1" />
+      <testcase name="should match a * glob within a segment" classname="matchesExcludePattern" time="0.000034" file="__tests__/main.test.ts" line="287" assertions="2" />
+      <testcase name="should not match an unrelated path" classname="matchesExcludePattern" time="0.000009" file="__tests__/main.test.ts" line="299" assertions="1" />
+    </testsuite>
+    <testsuite name="applyExclusions" file="__tests__/main.test.ts" line="306" tests="4" assertions="4" failures="0" skipped="0" time="0" hostname="JESSICA">
+      <testcase name="should return all files when no patterns provided" classname="applyExclusions" time="0.000023" file="__tests__/main.test.ts" line="307" assertions="1" />
+      <testcase name="should exclude files matching a plain pattern" classname="applyExclusions" time="0.000043" file="__tests__/main.test.ts" line="312" assertions="1" />
+      <testcase name="should exclude files matching a glob pattern" classname="applyExclusions" time="0.00003" file="__tests__/main.test.ts" line="322" assertions="1" />
+      <testcase name="should work with explicit files list" classname="applyExclusions" time="0.000011" file="__tests__/main.test.ts" line="333" assertions="1" />
+    </testsuite>
+    <testsuite name="run" file="__tests__/main.test.ts" line="339" tests="24" assertions="37" failures="0" skipped="0" time="0" hostname="JESSICA">
+      <testcase name="should set result=success on clean check" classname="run" time="0.000696" file="__tests__/main.test.ts" line="345" assertions="1" />
+      <testcase name="should set result=failure when formatter exits non-zero" classname="run" time="0.00011" file="__tests__/main.test.ts" line="354" assertions="1" />
+      <testcase name="should call setFailed when fail_on_error is true and check fails" classname="run" time="0.000085" file="__tests__/main.test.ts" line="363" assertions="1" />
+      <testcase name="should warn instead of failing when fail_on_error is false" classname="run" time="0.000073" file="__tests__/main.test.ts" line="371" assertions="2" />
+      <testcase name="should run both formatters when formatter=all" classname="run" time="0.000073" file="__tests__/main.test.ts" line="381" assertions="3" />
+      <testcase name="should run only javaformat when formatter=javaformat" classname="run" time="0.000054" file="__tests__/main.test.ts" line="400" assertions="2" />
+      <testcase name="should skip formatter and not fail when no files found" classname="run" time="0.000053" file="__tests__/main.test.ts" line="412" assertions="3" />
+      <testcase name="should pass gjf_args to javaformat" classname="run" time="0.000063" file="__tests__/main.test.ts" line="422" assertions="1" />
+      <testcase name="should pass ktfmt_args to ktfmt" classname="run" time="0.000052" file="__tests__/main.test.ts" line="437" assertions="1" />
+      <testcase name="should set files-checked output" classname="run" time="0.000066" file="__tests__/main.test.ts" line="452" assertions="1" />
+      <testcase name="should initialize telemetry" classname="run" time="0.000044" file="__tests__/main.test.ts" line="461" assertions="1" />
+      <testcase name="should flush telemetry in finally block" classname="run" time="0.00005" file="__tests__/main.test.ts" line="466" assertions="1" />
+      <testcase name="should flush telemetry even when an error is thrown" classname="run" time="0.000105" file="__tests__/main.test.ts" line="471" assertions="1" />
+      <testcase name="should report errors to telemetry on exception" classname="run" time="0.000061" file="__tests__/main.test.ts" line="479" assertions="2" />
+      <testcase name="should emit start and exit log events" classname="run" time="0.000073" file="__tests__/main.test.ts" line="488" assertions="2" />
+      <testcase name="should emit failure status in exit event when check fails" classname="run" time="0.000086" file="__tests__/main.test.ts" line="500" assertions="1" />
+      <testcase name="should record duration metric" classname="run" time="0.000062" file="__tests__/main.test.ts" line="513" assertions="1" />
+      <testcase name="should write summary on success" classname="run" time="0.000051" file="__tests__/main.test.ts" line="523" assertions="2" />
+      <testcase name="should write failure summary when check fails" classname="run" time="0.000126" file="__tests__/main.test.ts" line="532" assertions="1" />
+      <testcase name="should use grouped output sections" classname="run" time="0.000064" file="__tests__/main.test.ts" line="545" assertions="2" />
+      <testcase name="should wrap execution in tracing spans" classname="run" time="0.000062" file="__tests__/main.test.ts" line="557" assertions="2" />
+      <testcase name="should skip excluded files and not invoke formatter" classname="run" time="0.000108" file="__tests__/main.test.ts" line="571" assertions="2" />
+      <testcase name="should skip formatter entirely when all files are excluded" classname="run" time="0.000055" file="__tests__/main.test.ts" line="586" assertions="2" />
+      <testcase name="should apply exclusions to explicit files list" classname="run" time="0.00006" file="__tests__/main.test.ts" line="593" assertions="1" />
+    </testsuite>
+  </testsuite>
+</testsuites>

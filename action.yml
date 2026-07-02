@@ -1,0 +1,70 @@
+name: 'Elide Format'
+description: 'Check source formatting using Elide (google-java-format and ktfmt)'
+author: 'Elide'
+branding:
+  color: purple
+  icon: check-circle
+
+inputs:
+  formatter:
+    description: 'Formatter to run: javaformat, ktfmt, or all'
+    required: false
+    default: 'all'
+
+  mode:
+    description: 'Mode: check (default) or write'
+    required: false
+    default: 'check'
+
+  files:
+    description: >
+      Files or directories to check (space or newline-separated paths). When omitted,
+      sources are auto-detected by extension (*.java for javaformat, *.kt for ktfmt).
+    required: false
+
+  working-directory:
+    description: 'Directory to run formatters from'
+    required: false
+    default: ${{ github.workspace }}
+
+  exclude:
+    description: >
+      Files or patterns to exclude (space or newline-separated). Plain paths are matched
+      as path segments; glob patterns (* and **) are also supported.
+    required: false
+
+  gjf-args:
+    description: 'Extra arguments for google-java-format (appended after --)'
+    required: false
+
+  ktfmt-args:
+    description: 'Extra arguments for ktfmt (appended after --)'
+    required: false
+
+  include-kts:
+    description: 'Include .kts (Kotlin script) files when running ktfmt'
+    required: false
+    default: 'false'
+
+  fail-on-error:
+    description: 'Fail the workflow when formatting check fails'
+    required: false
+    default: 'true'
+
+  telemetry:
+    description: 'Enable anonymous error telemetry'
+    required: false
+    default: 'true'
+
+outputs:
+  result:
+    description: 'Check result: success or failure'
+
+  files-checked:
+    description: 'Number of files checked'
+
+runs:
+  using: node24
+  main: dist/index.js
+  post: dist/post.js
+  post-if: always()

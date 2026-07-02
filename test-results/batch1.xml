@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="15" assertions="16" failures="0" skipped="0" time="0.013475033">
+  <testsuite name="__tests__/command.test.ts" file="__tests__/command.test.ts" tests="15" assertions="16" failures="0" skipped="0" time="0" hostname="JESSICA">
+    <testsuite name="buildFormatterArgs" file="__tests__/command.test.ts" line="28" tests="7" assertions="7" failures="0" skipped="0" time="0" hostname="JESSICA">
+      <testcase name="should build javaformat check args" classname="buildFormatterArgs" time="0.000096" file="__tests__/command.test.ts" line="29" assertions="1" />
+      <testcase name="should build javaformat write args" classname="buildFormatterArgs" time="0.000015" file="__tests__/command.test.ts" line="41" assertions="1" />
+      <testcase name="should build ktfmt check args" classname="buildFormatterArgs" time="0.000011" file="__tests__/command.test.ts" line="47" assertions="1" />
+      <testcase name="should build ktfmt write args" classname="buildFormatterArgs" time="0.000009" file="__tests__/command.test.ts" line="53" assertions="1" />
+      <testcase name="should place extra args before the argfile" classname="buildFormatterArgs" time="0.000011" file="__tests__/command.test.ts" line="59" assertions="1" />
+      <testcase name="should place extra args before the argfile in write mode" classname="buildFormatterArgs" time="0.000009" file="__tests__/command.test.ts" line="73" assertions="1" />
+      <testcase name="should always include the -- separator" classname="buildFormatterArgs" time="0.000017" file="__tests__/command.test.ts" line="79" assertions="1" />
+    </testsuite>
+    <testsuite name="runFormatter" file="__tests__/command.test.ts" line="85" tests="8" assertions="9" failures="0" skipped="0" time="0" hostname="JESSICA">
+      <testcase name="should write files to an argfile one path per line" classname="runFormatter" time="0.000209" file="__tests__/command.test.ts" line="94" assertions="1" />
+      <testcase name="should pass @argfile to exec" classname="runFormatter" time="0.000114" file="__tests__/command.test.ts" line="109" assertions="1" />
+      <testcase name="should name the argfile after the formatter" classname="runFormatter" time="0.00005" file="__tests__/command.test.ts" line="115" assertions="1" />
+      <testcase name="should call exec with elide and correct mode args" classname="runFormatter" time="0.000046" file="__tests__/command.test.ts" line="121" assertions="1" />
+      <testcase name="should return the exit code" classname="runFormatter" time="0.000037" file="__tests__/command.test.ts" line="130" assertions="1" />
+      <testcase name="should delete the argfile after execution" classname="runFormatter" time="0.000033" file="__tests__/command.test.ts" line="142" assertions="1" />
+      <testcase name="should delete the argfile even when exec throws" classname="runFormatter" time="0.000111" file="__tests__/command.test.ts" line="148" assertions="2" />
+      <testcase name="should log a debug message with file count" classname="runFormatter" time="0.00004" file="__tests__/command.test.ts" line="156" assertions="1" />
+    </testsuite>
+  </testsuite>
+</testsuites>

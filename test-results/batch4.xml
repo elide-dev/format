@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="32" assertions="60" failures="0" skipped="0" time="0.033275617">
+  <testsuite name="__tests__/index.test.ts" file="__tests__/index.test.ts" tests="1" assertions="1" failures="0" skipped="0" time="0" hostname="JESSICA">
+    <testsuite name="index" file="__tests__/index.test.ts" line="7" tests="1" assertions="1" failures="0" skipped="0" time="0" hostname="JESSICA">
+      <testcase name="calls run when imported" classname="index" time="0.00025" file="__tests__/index.test.ts" line="8" assertions="1" />
+    </testsuite>
+  </testsuite>
+  <testsuite name="__tests__/options.test.ts" file="__tests__/options.test.ts" tests="31" assertions="59" failures="0" skipped="0" time="0" hostname="JESSICA">
+    <testsuite name="normalizeFormatter" file="__tests__/options.test.ts" line="26" tests="5" assertions="11" failures="0" skipped="0" time="0" hostname="JESSICA">
+      <testcase name="should recognize javaformat" classname="normalizeFormatter" time="0.000763" file="__tests__/options.test.ts" line="27" assertions="2" />
+      <testcase name="should accept google-java-format as alias" classname="normalizeFormatter" time="0.000038" file="__tests__/options.test.ts" line="31" assertions="2" />
+      <testcase name="should accept gjf as alias" classname="normalizeFormatter" time="0.000013" file="__tests__/options.test.ts" line="35" assertions="2" />
+      <testcase name="should recognize ktfmt" classname="normalizeFormatter" time="0.000014" file="__tests__/options.test.ts" line="39" assertions="2" />
+      <testcase name="should default unknown values to all" classname="normalizeFormatter" time="0.000013" file="__tests__/options.test.ts" line="43" assertions="3" />
+    </testsuite>
+    <testsuite name="normalizeMode" file="__tests__/options.test.ts" line="50" tests="3" assertions="7" failures="0" skipped="0" time="0" hostname="JESSICA">
+      <testcase name="should recognize write mode" classname="normalizeMode" time="0.000026" file="__tests__/options.test.ts" line="51" assertions="2" />
+      <testcase name="should accept format as alias for write" classname="normalizeMode" time="0.00001" file="__tests__/options.test.ts" line="55" assertions="2" />
+      <testcase name="should default to check mode" classname="normalizeMode" time="0.000012" file="__tests__/options.test.ts" line="59" assertions="3" />
+    </testsuite>
+    <testsuite name="parseArgs" file="__tests__/options.test.ts" line="66" tests="3" assertions="4" failures="0" skipped="0" time="0" hostname="JESSICA">
+      <testcase name="should split by whitespace" classname="parseArgs" time="0.000261" file="__tests__/options.test.ts" line="67" assertions="1" />
+      <testcase name="should handle single arg" classname="parseArgs" time="0.000015" file="__tests__/options.test.ts" line="73" assertions="1" />
+      <testcase name="should return empty array for blank input" classname="parseArgs" time="0.000019" file="__tests__/options.test.ts" line="76" assertions="2" />
+    </testsuite>
+    <testsuite name="parseFiles" file="__tests__/options.test.ts" line="82" tests="3" assertions="4" failures="0" skipped="0" time="0" hostname="JESSICA">
+      <testcase name="should split by spaces" classname="parseFiles" time="0.000029" file="__tests__/options.test.ts" line="83" assertions="1" />
+      <testcase name="should split by newlines" classname="parseFiles" time="0.000013" file="__tests__/options.test.ts" line="86" assertions="1" />
+      <testcase name="should return empty array for blank input" classname="parseFiles" time="0.000015" file="__tests__/options.test.ts" line="89" assertions="2" />
+    </testsuite>
+    <testsuite name="buildOptions" file="__tests__/options.test.ts" line="95" tests="8" assertions="18" failures="0" skipped="0" time="0" hostname="JESSICA">
+      <testcase name="should apply sensible defaults" classname="buildOptions" time="0.000041" file="__tests__/options.test.ts" line="96" assertions="8" />
+      <testcase name="should allow overriding formatter" classname="buildOptions" time="0.00016" file="__tests__/options.test.ts" line="107" assertions="2" />
+      <testcase name="should allow overriding mode" classname="buildOptions" time="0.000019" file="__tests__/options.test.ts" line="113" assertions="1" />
+      <testcase name="should allow overriding files and args" classname="buildOptions" time="0.000032" file="__tests__/options.test.ts" line="116" assertions="3" />
+      <testcase name="should allow disabling fail_on_error" classname="buildOptions" time="0.000015" file="__tests__/options.test.ts" line="126" assertions="1" />
+      <testcase name="should allow disabling telemetry" classname="buildOptions" time="0.000012" file="__tests__/options.test.ts" line="129" assertions="1" />
+      <testcase name="should default include_kts to false" classname="buildOptions" time="0.000007" file="__tests__/options.test.ts" line="132" assertions="1" />
+      <testcase name="should allow enabling include_kts" classname="buildOptions" time="0.000007" file="__tests__/options.test.ts" line="135" assertions="1" />
+    </testsuite>
+    <testsuite name="buildOptionsFromInputs" file="__tests__/options.test.ts" line="140" tests="9" assertions="15" failures="0" skipped="0" time="0" hostname="JESSICA">
+      <testcase name="should read formatter input" classname="buildOptionsFromInputs" time="0.000103" file="__tests__/options.test.ts" line="146" assertions="1" />
+      <testcase name="should read mode input" classname="buildOptionsFromInputs" time="0.000036" file="__tests__/options.test.ts" line="153" assertions="1" />
+      <testcase name="should read and parse files input" classname="buildOptionsFromInputs" time="0.000027" file="__tests__/options.test.ts" line="160" assertions="1" />
+      <testcase name="should read and parse gjf-args input" classname="buildOptionsFromInputs" time="0.000035" file="__tests__/options.test.ts" line="167" assertions="1" />
+      <testcase name="should read and parse ktfmt-args input" classname="buildOptionsFromInputs" time="0.000028" file="__tests__/options.test.ts" line="177" assertions="1" />
+      <testcase name="should read and parse exclude input" classname="buildOptionsFromInputs" time="0.000031" file="__tests__/options.test.ts" line="184" assertions="1" />
+      <testcase name="should read include-kts input" classname="buildOptionsFromInputs" time="0.00003" file="__tests__/options.test.ts" line="191" assertions="1" />
+      <testcase name="should fall back to default when getBooleanInput throws" classname="buildOptionsFromInputs" time="0.000079" file="__tests__/options.test.ts" line="198" assertions="3" />
+      <testcase name="should apply defaults when inputs are empty" classname="buildOptionsFromInputs" time="0.000046" file="__tests__/options.test.ts" line="208" assertions="5" />
+    </testsuite>
+  </testsuite>
+</testsuites>
