@@ -39,8 +39,14 @@ export async function runFormatter(
   writeFileSync(argfilePath, files.join('\n'), 'utf-8')
   core.debug(`Running: elide ${formatter} on ${files.length} files`)
   try {
-    return await exec.exec('elide', buildFormatterArgs(formatter, mode, [`@${argfilePath}`], extraArgs), { cwd, ignoreReturnCode: true })
+    return await exec.exec(
+      'elide',
+      buildFormatterArgs(formatter, mode, [`@${argfilePath}`], extraArgs),
+      { cwd, ignoreReturnCode: true }
+    )
   } finally {
-    try { unlinkSync(argfilePath) } catch {}
+    try {
+      unlinkSync(argfilePath)
+    } catch {}
   }
 }
