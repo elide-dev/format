@@ -29,19 +29,19 @@
     "node": ">=24"
   },
   "dependencies": {
-    "@actions/core": "3.0.0",
+    "@actions/core": "3.0.1",
     "@actions/exec": "3.0.0",
     "@sentry/node": "^10.46.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.9",
     "@commitlint/cli": "20.5.0",
-    "@commitlint/config-conventional": "20.5.0",
+    "@commitlint/config-conventional": "21.2.0",
     "@types/bun": "latest",
-    "@types/node": "25.5.0",
+    "@types/node": "26.1.0",
     "husky": "9.1.7",
-    "oxlint": "^1.57.0",
-    "typescript": "6.0.2"
+    "oxlint": "1.72.0",
+    "typescript": "6.0.3"
   },
   "scripts": {
     "turbo:build": "bun run turbo build --token $BUILDLESS_APIKEY --no-daemon --remote-only",
