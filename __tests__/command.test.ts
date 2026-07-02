@@ -2,9 +2,8 @@ import { describe, it, expect, beforeEach, jest, mock } from 'bun:test'
 
 const execMock = jest.fn().mockResolvedValue(0)
 const debugMock = jest.fn()
-// TODO(elide-bug): restore when argfile approach is re-enabled
-// const writeFileSyncMock = jest.fn()
-// const unlinkSyncMock = jest.fn()
+const writeFileSyncMock = jest.fn()
+const unlinkSyncMock = jest.fn()
 
 mock.module('@actions/exec', () => ({
   exec: execMock,
@@ -19,11 +18,10 @@ mock.module('@actions/core', () => ({
   setFailed: jest.fn(),
   setOutput: jest.fn()
 }))
-// TODO(elide-bug): restore when argfile approach is re-enabled
-// mock.module('node:fs', () => ({
-//   writeFileSync: writeFileSyncMock,
-//   unlinkSync: unlinkSyncMock
-// }))
+mock.module('node:fs', () => ({
+  writeFileSync: writeFileSyncMock,
+  unlinkSync: unlinkSyncMock
+}))
 
 const { buildFormatterArgs, runFormatter } = await import('../src/command')
 
@@ -98,10 +96,12 @@ describe('runFormatter', () => {
   beforeEach(() => {
     execMock.mockReset()
     debugMock.mockReset()
+    writeFileSyncMock.mockReset()
+    unlinkSyncMock.mockReset()
     execMock.mockResolvedValue(0)
   })
 
-  it('should pass files directly to exec without argfile', async () => {
+  it('should pass files via argfile to exec', async () => {
     await runFormatter(
       'ktfmt',
       'check',
@@ -110,9 +110,15 @@ describe('runFormatter', () => {
       '/workspace'
     )
     const passedArgs: string[] = execMock.mock.calls[0][1]
-    expect(passedArgs).toContain('Main.kt')
-    expect(passedArgs).toContain('Foo.kt')
-    expect(passedArgs.every((a: string) => !a.startsWith('@'))).toBe(true)
+    const argfileArg = passedArgs.find((a: string) => a.startsWith('@'))
+    expect(argfileArg).toBeDefined()
+    expect(passedArgs).not.toContain('Main.kt')
+    expect(passedArgs).not.toContain('Foo.kt')
+    expect(writeFileSyncMock).toHaveBeenCalledWith(
+      expect.stringContaining('format-ktfmt.txt'),
+      'Main.kt\nFoo.kt',
+      'utf-8'
+    )
   })
 
   it('should call exec with elide and correct mode args', async () => {
@@ -138,7 +144,7 @@ describe('runFormatter', () => {
         '--',
         '--dry-run',
         '--set-exit-if-changed',
-        'Foo.java'
+        expect.stringContaining('format-javaformat.txt'),
       ]),
       expect.anything()
     )
