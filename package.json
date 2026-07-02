@@ -40,7 +40,7 @@
     "@types/bun": "latest",
     "@types/node": "25.5.0",
     "husky": "9.1.7",
-    "oxlint": "^1.57.0",
+    "oxlint": "^1.72.0",
     "typescript": "6.0.2"
   },
   "scripts": {
