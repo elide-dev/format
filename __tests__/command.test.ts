@@ -144,7 +144,7 @@ describe('runFormatter', () => {
         '--',
         '--dry-run',
         '--set-exit-if-changed',
-        expect.stringContaining('format-javaformat.txt'),
+        expect.stringContaining('format-javaformat.txt')
       ]),
       expect.anything()
     )
