@@ -153,6 +153,21 @@ describe('runFormatter', () => {
     )
   })
 
+  it('should write extraArgs into the ktfmt argfile', async () => {
+    await runFormatter(
+      'ktfmt',
+      'check',
+      ['Main.kt'],
+      ['--google-style'],
+      '/workspace'
+    )
+    expect(writeFileSyncMock).toHaveBeenCalledWith(
+      expect.stringContaining('format-ktfmt.txt'),
+      '--dry-run\n--set-exit-if-changed\n--google-style\nMain.kt',
+      'utf-8'
+    )
+  })
+
   it('should return the exit code', async () => {
     execMock.mockResolvedValue(1)
     const code = await runFormatter(

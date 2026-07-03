@@ -20,14 +20,26 @@ export enum ActionOutputName {
   FILES_CHECKED = 'files-checked'
 }
 
-export function findFiles(dir: string, ext: string): string[] {
-  const entries = readdirSync(dir, {
-    recursive: true,
-    encoding: 'utf-8'
-  }) as string[]
-  return entries
-    .filter((f: string) => f.endsWith(ext))
-    .map(f => path.join(dir, f))
+export function findFiles(
+  dir: string,
+  ext: string,
+  excludePatterns: string[] = []
+): string[] {
+  const results: string[] = []
+  function walk(current: string): void {
+    for (const entry of readdirSync(current, { withFileTypes: true })) {
+      const full = path.join(current, entry.name)
+      if (entry.isDirectory()) {
+        if (!excludePatterns.some(p => matchesExcludePattern(full, p))) {
+          walk(full)
+        }
+      } else if (entry.name.endsWith(ext)) {
+        results.push(full)
+      }
+    }
+  }
+  walk(dir)
+  return results
 }
 
 function getExtensions(
@@ -51,7 +63,7 @@ export function resolveFiles(
         : path.join(options.working_directory, f)
       try {
         if (statSync(resolved).isDirectory()) {
-          return exts.flatMap(ext => findFiles(resolved, ext))
+          return exts.flatMap(ext => findFiles(resolved, ext, options.exclude))
         }
       } catch {
         // not a directory or path doesn't exist — treat as a file path
@@ -60,7 +72,7 @@ export function resolveFiles(
     })
   }
 
-  return exts.flatMap(ext => findFiles(options.working_directory, ext))
+  return exts.flatMap(ext => findFiles(options.working_directory, ext, options.exclude))
 }
 
 /**
