@@ -106,42 +106,61 @@ const clearAllMocks = () => {
   summaryMock.write.mockReset()
 }
 
+const f = (name: string) => ({ name, isDirectory: () => false })
+const d = (name: string) => ({ name, isDirectory: () => true })
+
 describe('findFiles', () => {
-  beforeEach(() => readdirSyncMock.mockClear())
+  beforeEach(() => readdirSyncMock.mockReset())
 
   it('should return files with the matching extension', () => {
-    readdirSyncMock.mockReturnValue(['src/Main.java', 'src/Foo.java'])
+    readdirSyncMock.mockReturnValue([f('Main.java'), f('Foo.java')])
     const result = findFiles('/workspace', '.java')
     expect(result).toHaveLength(2)
     expect(result[0]).toContain('Main.java')
   })
 
   it('should return all matching files regardless of directory name', () => {
-    readdirSyncMock.mockReturnValue([
-      'src/Main.java',
-      'node_modules/Dep.java',
-      'build/Out.java',
-      'target/Target.java',
-      '.gradle/Cached.java'
-    ])
+    readdirSyncMock.mockImplementation((dir: string) => {
+      if (String(dir) === '/workspace') return [d('src'), d('node_modules')]
+      if (String(dir).endsWith('src')) return [f('Main.java')]
+      if (String(dir).endsWith('node_modules')) return [f('Dep.java')]
+      return []
+    })
     const result = findFiles('/workspace', '.java')
-    expect(result).toHaveLength(5)
+    expect(result).toHaveLength(2)
   })
 
   it('should return empty array when no matching files exist', () => {
-    readdirSyncMock.mockReturnValue(['src/App.kt', 'src/Main.kt'])
+    readdirSyncMock.mockReturnValue([f('App.kt'), f('Main.kt')])
     const result = findFiles('/workspace', '.java')
     expect(result).toHaveLength(0)
   })
 
   it('should return all matching files at any depth', () => {
-    readdirSyncMock.mockReturnValue([
-      'a/Main.java',
-      'a/b/c/Deep.java',
-      'README.md'
-    ])
+    readdirSyncMock.mockImplementation((dir: string) => {
+      if (String(dir) === '/workspace') return [d('a'), f('README.md')]
+      if (String(dir).endsWith('/a')) return [f('Main.java'), d('b')]
+      if (String(dir).endsWith('/b')) return [d('c')]
+      if (String(dir).endsWith('/c')) return [f('Deep.java')]
+      return []
+    })
     const result = findFiles('/workspace', '.java')
     expect(result).toHaveLength(2)
+  })
+
+  it('should prune directories matching exclude patterns', () => {
+    readdirSyncMock.mockImplementation((dir: string) => {
+      if (String(dir).endsWith('node_modules'))
+        return [f('Dep.java')]
+      return [f('Main.java'), d('node_modules')]
+    })
+    const result = findFiles('/workspace', '.java', ['node_modules'])
+    expect(result).toHaveLength(1)
+    expect(result[0]).toContain('Main.java')
+    expect(readdirSyncMock).not.toHaveBeenCalledWith(
+      expect.stringContaining('node_modules'),
+      expect.anything()
+    )
   })
 })
 
@@ -175,7 +194,7 @@ describe('resolveFiles', () => {
 
   it('should expand directory entries', () => {
     statSyncMock.mockReturnValue({ isDirectory: () => true })
-    readdirSyncMock.mockReturnValue(['Main.java', 'Foo.java'])
+    readdirSyncMock.mockReturnValue([f('Main.java'), f('Foo.java')])
     const opts = buildOptions({
       files: ['/workspace/src'],
       working_directory: '/workspace'
@@ -186,14 +205,14 @@ describe('resolveFiles', () => {
   })
 
   it('should scan for .java files for javaformat when no files provided', () => {
-    readdirSyncMock.mockReturnValue(['src/Main.java'])
+    readdirSyncMock.mockReturnValue([f('Main.java')])
     const opts = buildOptions({ files: [], working_directory: '/workspace' })
     const result = resolveFiles(opts, 'javaformat')
     expect(result[0]).toContain('Main.java')
   })
 
   it('should scan for .kt files for ktfmt when no files provided', () => {
-    readdirSyncMock.mockReturnValue(['src/Main.kt'])
+    readdirSyncMock.mockReturnValue([f('Main.kt')])
     const opts = buildOptions({ files: [], working_directory: '/workspace' })
     const result = resolveFiles(opts, 'ktfmt')
     expect(result[0]).toContain('Main.kt')
@@ -205,7 +224,7 @@ describe('resolveFiles', () => {
   })
 
   it('should not include .kts files for ktfmt by default', () => {
-    readdirSyncMock.mockReturnValue(['src/Main.kt', 'build.kts'])
+    readdirSyncMock.mockReturnValue([f('Main.kt'), f('build.kts')])
     const opts = buildOptions({ files: [], working_directory: '/workspace' })
     const result = resolveFiles(opts, 'ktfmt')
     expect(result.some(f => f.endsWith('.kts'))).toBe(false)
@@ -213,7 +232,7 @@ describe('resolveFiles', () => {
   })
 
   it('should include .kts files for ktfmt when include_kts is true', () => {
-    readdirSyncMock.mockReturnValue(['src/Main.kt', 'build.kts'])
+    readdirSyncMock.mockReturnValue([f('Main.kt'), f('build.kts')])
     const opts = buildOptions({
       files: [],
       working_directory: '/workspace',
@@ -225,7 +244,7 @@ describe('resolveFiles', () => {
   })
 
   it('should never include .kts files for javaformat', () => {
-    readdirSyncMock.mockReturnValue(['Foo.java', 'build.kts'])
+    readdirSyncMock.mockReturnValue([f('Foo.java'), f('build.kts')])
     const opts = buildOptions({
       files: [],
       working_directory: '/workspace',
@@ -239,8 +258,8 @@ describe('resolveFiles', () => {
   it('should expand directory into .kt and .kts when include_kts is true', () => {
     statSyncMock.mockReturnValue({ isDirectory: () => true })
     readdirSyncMock
-      .mockReturnValueOnce(['Main.kt'])
-      .mockReturnValueOnce(['build.kts'])
+      .mockReturnValueOnce([f('Main.kt')])
+      .mockReturnValueOnce([f('build.kts')])
     const opts = buildOptions({
       files: ['/workspace/src'],
       working_directory: '/workspace',
@@ -449,7 +468,7 @@ describe('run', () => {
   })
 
   it('should set files-checked output', async () => {
-    readdirSyncMock.mockReturnValue(['Main.kt', 'Foo.kt'])
+    readdirSyncMock.mockReturnValue([f('Main.kt'), f('Foo.kt')])
     await run({ formatter: 'ktfmt' })
     expect(setOutputMock).toHaveBeenCalledWith(
       ActionOutputName.FILES_CHECKED,
@@ -568,9 +587,12 @@ describe('run', () => {
   })
 
   it('should skip excluded files and not invoke formatter', async () => {
-    readdirSyncMock.mockReturnValue(['src/Main.kt', 'src/generated/Gen.kt'])
+    readdirSyncMock.mockImplementation((dir: string) => {
+      if (String(dir).endsWith('src')) return [f('Main.kt'), d('generated')]
+      return [d('src')]
+    })
     await run({ formatter: 'ktfmt', exclude: ['generated'] })
-    // Only Main.kt survives exclusion
+    // Only Main.kt survives — generated dir is pruned during traversal
     expect(runFormatterMock).toHaveBeenCalledWith(
       'ktfmt',
       expect.any(String),
@@ -583,7 +605,7 @@ describe('run', () => {
   })
 
   it('should skip formatter entirely when all files are excluded', async () => {
-    readdirSyncMock.mockReturnValue(['src/generated/Gen.kt'])
+    readdirSyncMock.mockReturnValue([d('generated')])
     await run({ formatter: 'ktfmt', exclude: ['generated'] })
     expect(runFormatterMock).not.toHaveBeenCalled()
     expect(setFailedMock).not.toHaveBeenCalled()
