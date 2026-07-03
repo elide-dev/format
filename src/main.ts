@@ -72,7 +72,9 @@ export function resolveFiles(
     })
   }
 
-  return exts.flatMap(ext => findFiles(options.working_directory, ext, options.exclude))
+  return exts.flatMap(ext =>
+    findFiles(options.working_directory, ext, options.exclude)
+  )
 }
 
 /**

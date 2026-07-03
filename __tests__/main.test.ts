@@ -150,8 +150,7 @@ describe('findFiles', () => {
 
   it('should prune directories matching exclude patterns', () => {
     readdirSyncMock.mockImplementation((dir: string) => {
-      if (String(dir).endsWith('node_modules'))
-        return [f('Dep.java')]
+      if (String(dir).endsWith('node_modules')) return [f('Dep.java')]
       return [f('Main.java'), d('node_modules')]
     })
     const result = findFiles('/workspace', '.java', ['node_modules'])
