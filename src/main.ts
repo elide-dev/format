@@ -20,27 +20,13 @@ export enum ActionOutputName {
   FILES_CHECKED = 'files-checked'
 }
 
-const SKIP_DIRS = new Set([
-  'node_modules',
-  '.git',
-  'build',
-  'dist',
-  'target',
-  '.gradle',
-  '.idea',
-  'out'
-])
-
 export function findFiles(dir: string, ext: string): string[] {
   const entries = readdirSync(dir, {
     recursive: true,
     encoding: 'utf-8'
   }) as string[]
   return entries
-    .filter(f => {
-      const parts = f.split(/[/\\]/)
-      return !parts.some(p => SKIP_DIRS.has(p)) && f.endsWith(ext)
-    })
+    .filter((f: string) => f.endsWith(ext))
     .map(f => path.join(dir, f))
 }
 

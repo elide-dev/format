@@ -114,23 +114,26 @@ describe('runFormatter', () => {
     expect(argfileArg).toBeDefined()
     expect(passedArgs).not.toContain('Main.kt')
     expect(passedArgs).not.toContain('Foo.kt')
+    // ktfmt: flags and files all go in the argfile
     expect(writeFileSyncMock).toHaveBeenCalledWith(
       expect.stringContaining('format-ktfmt.txt'),
-      'Main.kt\nFoo.kt',
+      '--dry-run\n--set-exit-if-changed\nMain.kt\nFoo.kt',
       'utf-8'
     )
   })
 
   it('should call exec with elide and correct mode args', async () => {
     await runFormatter('ktfmt', 'check', ['Main.kt'], [], '/workspace')
+    // ktfmt: only @argfile follows --, flags are written into the file
+    const passedArgs: string[] = execMock.mock.calls[0][1]
+    expect(passedArgs[0]).toBe('ktfmt')
+    expect(passedArgs[1]).toBe('--')
+    expect(passedArgs[2]).toMatch(/^@.*format-ktfmt\.txt$/)
+    expect(passedArgs).not.toContain('--dry-run')
+    expect(passedArgs).not.toContain('--set-exit-if-changed')
     expect(execMock).toHaveBeenCalledWith(
       'elide',
-      expect.arrayContaining([
-        'ktfmt',
-        '--',
-        '--dry-run',
-        '--set-exit-if-changed'
-      ]),
+      expect.anything(),
       expect.objectContaining({ cwd: '/workspace', ignoreReturnCode: true })
     )
   })

@@ -116,7 +116,7 @@ describe('findFiles', () => {
     expect(result[0]).toContain('Main.java')
   })
 
-  it('should skip files inside excluded directories', () => {
+  it('should return all matching files regardless of directory name', () => {
     readdirSyncMock.mockReturnValue([
       'src/Main.java',
       'node_modules/Dep.java',
@@ -125,8 +125,7 @@ describe('findFiles', () => {
       '.gradle/Cached.java'
     ])
     const result = findFiles('/workspace', '.java')
-    expect(result).toHaveLength(1)
-    expect(result[0]).toContain('Main.java')
+    expect(result).toHaveLength(5)
   })
 
   it('should return empty array when no matching files exist', () => {
