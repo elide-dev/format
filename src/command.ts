@@ -36,14 +36,30 @@ export async function runFormatter(
 ): Promise<number> {
   const tempDir = process.env.RUNNER_TEMP ?? os.tmpdir()
   const argfilePath = path.join(tempDir, `format-${formatter}.txt`)
-  writeFileSync(argfilePath, files.join('\n'), 'utf-8')
+
+  let execArgs: string[]
+  if (formatter === 'ktfmt') {
+    // ktfmt requires the argfile to be the only argument after `--`, so flags go in the file
+    const checkFlags = mode === 'check' ? CHECK_FLAGS.ktfmt : []
+    writeFileSync(
+      argfilePath,
+      [...checkFlags, ...extraArgs, ...files].join('\n'),
+      'utf-8'
+    )
+    execArgs = [formatter, '--', `@${argfilePath}`]
+  } else {
+    writeFileSync(argfilePath, files.join('\n'), 'utf-8')
+    execArgs = buildFormatterArgs(
+      formatter,
+      mode,
+      [`@${argfilePath}`],
+      extraArgs
+    )
+  }
+
   core.debug(`Running: elide ${formatter} on ${files.length} files`)
   try {
-    return await exec.exec(
-      'elide',
-      buildFormatterArgs(formatter, mode, [`@${argfilePath}`], extraArgs),
-      { cwd, ignoreReturnCode: true }
-    )
+    return await exec.exec('elide', execArgs, { cwd, ignoreReturnCode: true })
   } finally {
     try {
       unlinkSync(argfilePath)
