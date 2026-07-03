@@ -34,7 +34,7 @@
     "@sentry/node": "^10.46.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.9",
+    "@biomejs/biome": "^2.5.2",
     "@commitlint/cli": "20.5.0",
     "@commitlint/config-conventional": "21.2.0",
     "@types/bun": "latest",
