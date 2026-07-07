@@ -12,6 +12,11 @@ const CHECK_FLAGS: Record<FormatterName, string[]> = {
   ktfmt: ['--dry-run', '--set-exit-if-changed']
 }
 
+export const WRITE_FLAGS: Record<FormatterName, string[]> = {
+  javaformat: ['-r'],
+  ktfmt: []
+}
+
 export function buildFormatterArgs(
   formatter: FormatterName,
   mode: FormatMode,
