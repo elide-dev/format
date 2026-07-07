@@ -1,7 +1,7 @@
 {
   "name": "@elide-dev/format",
   "description": "GitHub Action to check source formatting using Elide",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "author": "Elide Team (https://elide.dev)",
   "private": true,
   "homepage": "https://github.com/elide-dev/format",
