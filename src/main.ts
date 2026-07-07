@@ -1,7 +1,6 @@
 import * as core from '@actions/core'
 import { readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
-import Syntax from './vendor/syntax.cjs'
 import buildOptions, {
   buildOptionsFromInputs,
   type ElideFormatActionOptions,
@@ -172,57 +171,21 @@ function shellQuote(p: string): string {
   return `'${p.replace(/'/g, "'\\''")}'`
 }
 
-const MARKUP_COLORS: Record<string, string> = {
-  comment: '\x1b[2m',
-  keyword: '\x1b[34m',
-  literal: '\x1b[33m'
-}
-
-function applyMarkup(text: string, markup: Record<string, unknown>): string {
-  const ranges: { start: number; end: number; color: string }[] = []
-  for (const [type, spans] of Object.entries(markup)) {
-    const color = MARKUP_COLORS[type]
-    if (!color || !Array.isArray(spans)) continue
-    for (const span of spans) {
-      const [start, end] = span as [number, number]
-      ranges.push({ start, end, color })
-    }
-  }
-  ranges.sort((a, b) => a.start - b.start)
-  let result = ''
-  let pos = 0
-  for (const { start, end, color } of ranges) {
-    result += text.slice(pos, start)
-    result += color + text.slice(start, end) + '\x1b[0m'
-    pos = end
-  }
-  return result + text.slice(pos)
-}
-
-function addDiffLineColors(text: string): string {
-  return text
+export function formatDiff(
+  _formatter: FormatterName,
+  diffText: string
+): string {
+  return diffText
     .split('\n')
     .map(line => {
-      if (line.startsWith('---') || line.startsWith('+++')) return line
+      if (line.startsWith('---') || line.startsWith('+++'))
+        return `\x1b[2m${line}\x1b[0m`
       if (line.startsWith('@@')) return `\x1b[36m${line}\x1b[0m`
       if (line.startsWith('+')) return `\x1b[32m${line}\x1b[0m`
       if (line.startsWith('-')) return `\x1b[31m${line}\x1b[0m`
       return line
     })
     .join('\n')
-}
-
-export function formatDiff(
-  _formatter: FormatterName,
-  diffText: string
-): string {
-  try {
-    const syn = new Syntax({ language: 'diff', cssPrefix: '' })
-    syn.richtext(diffText)
-    return addDiffLineColors(applyMarkup(diffText, syn.markup()))
-  } catch {
-    return addDiffLineColors(diffText)
-  }
 }
 
 export function printOutputModeResult(

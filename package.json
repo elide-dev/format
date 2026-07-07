@@ -31,8 +31,7 @@
   "dependencies": {
     "@actions/core": "3.0.1",
     "@actions/exec": "3.0.0",
-    "@sentry/node": "^10.63.0",
-    "syntax": "^1.6.3"
+    "@sentry/node": "^10.63.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.2",
@@ -48,8 +47,7 @@
     "turbo:build": "bun run turbo build --token $BUILDLESS_APIKEY --no-daemon --remote-only",
     "turbo:test": "bun run turbo test --token $BUILDLESS_APIKEY --no-daemon --remote-only",
     "build": "bun run bundle",
-    "bundle": "bun run format:write && bun run vendor && bun run package",
-    "vendor": "node scripts/vendor-syntax.mjs",
+    "bundle": "bun run format:write && bun run package",
     "ci:build": "bun run turbo:build",
     "ci:test": "bun run turbo:test",
     "format:write": "biome format --write src __tests__",
