@@ -760,7 +760,10 @@ describe('run', () => {
       files: ['Main.kt'],
       output_mode: 'file'
     })
-    expect(setOutputMock).toHaveBeenCalledWith(ActionOutputName.FILES_FAILED, '')
+    expect(setOutputMock).toHaveBeenCalledWith(
+      ActionOutputName.FILES_FAILED,
+      ''
+    )
   })
 
   it('should not set files-failed when output_mode is not file', async () => {
@@ -974,9 +977,9 @@ describe('isDiffOutput', () => {
   })
 
   it('should return false for file-listing output', () => {
-    expect(isDiffOutput('/workspace/Main.kt\n/workspace/Foo.kt\n2 files\n')).toBe(
-      false
-    )
+    expect(
+      isDiffOutput('/workspace/Main.kt\n/workspace/Foo.kt\n2 files\n')
+    ).toBe(false)
   })
 
   it('should return false for empty string', () => {
