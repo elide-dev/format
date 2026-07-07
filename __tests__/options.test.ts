@@ -269,11 +269,22 @@ describe('buildOptionsFromInputs', () => {
     expect(buildOptionsFromInputs().output_mode_diffs).toBe(3)
   })
 
-  it('should return null for invalid output-mode-diffs', () => {
+  it('should throw for invalid output-mode-diffs', () => {
     getInputMock.mockImplementation((name: string) =>
       name === OptionName.OUTPUT_MODE_DIFFS ? 'not-a-number' : ''
     )
-    expect(buildOptionsFromInputs().output_mode_diffs).toBeNull()
+    expect(() => buildOptionsFromInputs()).toThrow(
+      "invalid value for 'output-mode-diffs'"
+    )
+  })
+
+  it('should throw for non-positive output-mode-diffs', () => {
+    getInputMock.mockImplementation((name: string) =>
+      name === OptionName.OUTPUT_MODE_DIFFS ? '0' : ''
+    )
+    expect(() => buildOptionsFromInputs()).toThrow(
+      "invalid value for 'output-mode-diffs'"
+    )
   })
 
   it('should read output-mode-command as string', () => {

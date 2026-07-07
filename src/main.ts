@@ -6,7 +6,7 @@ import buildOptions, {
   type ElideFormatActionOptions,
   type OutputMode
 } from './options'
-import { runFormatter, type FormatterName } from './command'
+import { runFormatter, WRITE_FLAGS, type FormatterName } from './command'
 import {
   initTelemetry,
   reportError,
@@ -161,9 +161,9 @@ export function parseDiffOutput(stdout: string): string {
 export function isDiffOutput(stdout: string): boolean {
   const lines = stdout.split('\n').filter(l => l.trim())
   return (
-    lines[0]?.startsWith('---') === true ||
-    lines[1]?.startsWith('+++') === true ||
-    lines[2]?.startsWith('@@') === true
+    lines[0]?.startsWith('---') ||
+    lines[1]?.startsWith('+++') ||
+    lines[2]?.startsWith('@@')
   )
 }
 
@@ -175,7 +175,8 @@ export function printOutputModeResult(
   outputMode: OutputMode,
   formatter: FormatterName,
   stdout: string,
-  customCommand: string | null
+  customCommand: string | null,
+  extraArgs: string[] = []
 ): void {
   if (outputMode === 'none' || !stdout) return
 
@@ -211,8 +212,15 @@ export function printOutputModeResult(
       } else {
         const files = parseListedFiles(stdout)
         if (files.length > 0) {
+          const writeFlags = WRITE_FLAGS[formatter]
+          const args = [
+            ...writeFlags,
+            ...extraArgs.map(shellQuote),
+            '--',
+            ...files.map(shellQuote)
+          ]
           core.info(
-            `Run the following command to fix formatting:\nelide ${formatter} -- ${files.map(shellQuote).join(' ')}`
+            `Run the following command to fix formatting:\nelide ${formatter} ${args.join(' ')}`
           )
         }
       }
@@ -330,7 +338,8 @@ export async function run(
           effectiveOptions.output_mode,
           formatter,
           stdout,
-          effectiveOptions.output_mode_command
+          effectiveOptions.output_mode_command,
+          extraArgs
         )
         if (effectiveOptions.output_mode === 'file') {
           failedFiles.push(...parseListedFiles(stdout))

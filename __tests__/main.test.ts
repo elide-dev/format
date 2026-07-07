@@ -14,7 +14,8 @@ const runFormatterMock = jest
 
 mock.module('../src/command', () => ({
   runFormatter: runFormatterMock,
-  buildFormatterArgs: jest.fn()
+  buildFormatterArgs: jest.fn(),
+  WRITE_FLAGS: { javaformat: ['-r'], ktfmt: [] }
 }))
 
 const debugMock = jest.fn()
@@ -902,7 +903,7 @@ describe('printOutputModeResult', () => {
     expect(infoMock).toHaveBeenCalledWith('make format')
   })
 
-  it('should generate elide command for command mode without custom command', () => {
+  it('should generate elide command for ktfmt without write flag', () => {
     printOutputModeResult(
       'command',
       'ktfmt',
@@ -911,6 +912,18 @@ describe('printOutputModeResult', () => {
     )
     expect(infoMock).toHaveBeenCalledWith(
       expect.stringContaining("elide ktfmt -- '/workspace/Main.kt'")
+    )
+  })
+
+  it('should generate elide command for javaformat with -r write flag', () => {
+    printOutputModeResult(
+      'command',
+      'javaformat',
+      '/workspace/Main.java\n1 file\n',
+      null
+    )
+    expect(infoMock).toHaveBeenCalledWith(
+      expect.stringContaining("elide javaformat -r -- '/workspace/Main.java'")
     )
   })
 

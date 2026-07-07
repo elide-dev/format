@@ -123,9 +123,12 @@ function stringInput(name: string, defaultValue?: string): string | undefined {
 function integerInput(name: string): number | null {
   const value = core.getInput(name).trim()
   if (!value) return null
-  if (!/^\d+$/.test(value)) return null
-  const n = parseInt(value, 10)
-  return n > 0 ? n : null
+  if (!/^\d+$/.test(value) || parseInt(value, 10) <= 0) {
+    throw new Error(
+      `invalid value for '${name}': must be a positive integer, got '${value}'`
+    )
+  }
+  return parseInt(value, 10)
 }
 
 export function buildOptionsFromInputs(): ElideFormatActionOptions {
