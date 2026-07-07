@@ -8,7 +8,9 @@ mock.module('node:fs', () => ({
   statSync: statSyncMock
 }))
 
-const runFormatterMock = jest.fn().mockResolvedValue(0)
+const runFormatterMock = jest
+  .fn()
+  .mockResolvedValue({ exitCode: 0, stdout: '' })
 
 mock.module('../src/command', () => ({
   runFormatter: runFormatterMock,
@@ -63,14 +65,18 @@ const {
   findFiles,
   matchesExcludePattern,
   applyExclusions,
-  ActionOutputName
+  ActionOutputName,
+  buildElideFlags,
+  parseListedFiles,
+  parseDiffOutput,
+  printOutputModeResult
 } = await import('../src/main')
 const { default: buildOptions } = await import('../src/options')
 
 const resetMocks = () => {
   readdirSyncMock.mockReturnValue([])
   statSyncMock.mockReturnValue({ isDirectory: () => false })
-  runFormatterMock.mockResolvedValue(0)
+  runFormatterMock.mockResolvedValue({ exitCode: 0, stdout: '' })
   groupMock.mockImplementation(async (_: string, fn: () => Promise<any>) =>
     fn()
   )
@@ -360,7 +366,7 @@ describe('run', () => {
   })
 
   it('should set result=success on clean check', async () => {
-    runFormatterMock.mockResolvedValue(0)
+    runFormatterMock.mockResolvedValue({ exitCode: 0, stdout: '' })
     await run({ formatter: 'ktfmt', files: ['Main.kt'] })
     expect(setOutputMock).toHaveBeenCalledWith(
       ActionOutputName.RESULT,
@@ -369,7 +375,7 @@ describe('run', () => {
   })
 
   it('should set result=failure when formatter exits non-zero', async () => {
-    runFormatterMock.mockResolvedValue(1)
+    runFormatterMock.mockResolvedValue({ exitCode: 1, stdout: '' })
     await run({ formatter: 'ktfmt', files: ['Main.kt'] })
     expect(setOutputMock).toHaveBeenCalledWith(
       ActionOutputName.RESULT,
@@ -378,7 +384,7 @@ describe('run', () => {
   })
 
   it('should call setFailed when fail_on_error is true and check fails', async () => {
-    runFormatterMock.mockResolvedValue(1)
+    runFormatterMock.mockResolvedValue({ exitCode: 1, stdout: '' })
     await run({ formatter: 'ktfmt', files: ['Main.kt'], fail_on_error: true })
     expect(setFailedMock).toHaveBeenCalledWith(
       expect.stringContaining('Format check failed')
@@ -386,7 +392,7 @@ describe('run', () => {
   })
 
   it('should warn instead of failing when fail_on_error is false', async () => {
-    runFormatterMock.mockResolvedValue(1)
+    runFormatterMock.mockResolvedValue({ exitCode: 1, stdout: '' })
     await run({ formatter: 'ktfmt', files: ['Main.kt'], fail_on_error: false })
     expect(setFailedMock).not.toHaveBeenCalled()
     expect(warningMock).toHaveBeenCalledWith(
@@ -403,14 +409,16 @@ describe('run', () => {
       expect.any(String),
       expect.any(Array),
       expect.any(Array),
-      expect.any(String)
+      expect.any(String),
+      expect.any(Array)
     )
     expect(runFormatterMock).toHaveBeenCalledWith(
       'ktfmt',
       expect.any(String),
       expect.any(Array),
       expect.any(Array),
-      expect.any(String)
+      expect.any(String),
+      expect.any(Array)
     )
   })
 
@@ -422,7 +430,8 @@ describe('run', () => {
       expect.any(String),
       expect.any(Array),
       expect.any(Array),
-      expect.any(String)
+      expect.any(String),
+      expect.any(Array)
     )
   })
 
@@ -447,7 +456,8 @@ describe('run', () => {
       expect.any(String),
       expect.any(Array),
       ['--aosp'],
-      expect.any(String)
+      expect.any(String),
+      expect.any(Array)
     )
   })
 
@@ -462,7 +472,8 @@ describe('run', () => {
       expect.any(String),
       expect.any(Array),
       ['--google-style'],
-      expect.any(String)
+      expect.any(String),
+      expect.any(Array)
     )
   })
 
@@ -515,7 +526,7 @@ describe('run', () => {
   })
 
   it('should emit failure status in exit event when check fails', async () => {
-    runFormatterMock.mockResolvedValue(1)
+    runFormatterMock.mockResolvedValue({ exitCode: 1, stdout: '' })
     await run({
       formatter: 'ktfmt',
       files: ['Main.kt'],
@@ -547,7 +558,7 @@ describe('run', () => {
   })
 
   it('should write failure summary when check fails', async () => {
-    runFormatterMock.mockResolvedValue(1)
+    runFormatterMock.mockResolvedValue({ exitCode: 1, stdout: '' })
     await run({
       formatter: 'ktfmt',
       files: ['Main.kt'],
@@ -597,7 +608,8 @@ describe('run', () => {
       expect.any(String),
       expect.arrayContaining([expect.stringContaining('Main.kt')]),
       expect.any(Array),
-      expect.any(String)
+      expect.any(String),
+      expect.any(Array)
     )
     const passedFiles: string[] = runFormatterMock.mock.calls[0][2]
     expect(passedFiles.some((f: string) => f.includes('generated'))).toBe(false)
@@ -619,5 +631,238 @@ describe('run', () => {
     })
     const passedFiles: string[] = runFormatterMock.mock.calls[0][2]
     expect(passedFiles).toEqual(['/workspace/src/Main.kt'])
+  })
+
+  it('should pass elide flags from output_mode to runFormatter', async () => {
+    await run({
+      formatter: 'ktfmt',
+      files: ['Main.kt'],
+      output_mode: 'file'
+    })
+    const passedElideFlags: string[] = runFormatterMock.mock.calls[0][5]
+    expect(passedElideFlags).toEqual(['--list-files'])
+  })
+
+  it('should pass --list-diffs flag for diff output mode', async () => {
+    await run({
+      formatter: 'ktfmt',
+      files: ['Main.kt'],
+      mode: 'check',
+      output_mode: 'diff'
+    })
+    const passedElideFlags: string[] = runFormatterMock.mock.calls[0][5]
+    expect(passedElideFlags).toEqual(['--list-diffs'])
+  })
+
+  it('should pass --list-diffs=N flag when output_mode_diffs is set', async () => {
+    await run({
+      formatter: 'ktfmt',
+      files: ['Main.kt'],
+      mode: 'check',
+      output_mode: 'diff',
+      output_mode_diffs: 3
+    })
+    const passedElideFlags: string[] = runFormatterMock.mock.calls[0][5]
+    expect(passedElideFlags).toEqual(['--list-diffs=3'])
+  })
+
+  it('should pass --list-files for command output mode', async () => {
+    await run({
+      formatter: 'ktfmt',
+      files: ['Main.kt'],
+      output_mode: 'command'
+    })
+    const passedElideFlags: string[] = runFormatterMock.mock.calls[0][5]
+    expect(passedElideFlags).toEqual(['--list-files'])
+  })
+
+  it('should pass no elide flags for none output mode', async () => {
+    await run({
+      formatter: 'ktfmt',
+      files: ['Main.kt'],
+      output_mode: 'none'
+    })
+    const passedElideFlags: string[] = runFormatterMock.mock.calls[0][5]
+    expect(passedElideFlags).toEqual([])
+  })
+
+  it('should print listed files in file output mode', async () => {
+    runFormatterMock.mockResolvedValue({
+      exitCode: 1,
+      stdout: '/workspace/Main.kt\n/workspace/Foo.kt\n2 files checked\n'
+    })
+    await run({
+      formatter: 'ktfmt',
+      files: ['Main.kt', 'Foo.kt'],
+      output_mode: 'file',
+      fail_on_error: false
+    })
+    expect(infoMock).toHaveBeenCalledWith(
+      expect.stringContaining('Files affected by ktfmt')
+    )
+    expect(infoMock).toHaveBeenCalledWith('/workspace/Main.kt')
+    expect(infoMock).toHaveBeenCalledWith('/workspace/Foo.kt')
+  })
+
+  it('should print custom command in command output mode when output_mode_command is set', async () => {
+    runFormatterMock.mockResolvedValue({
+      exitCode: 1,
+      stdout: '/workspace/Main.kt\n1 file checked\n'
+    })
+    await run({
+      formatter: 'ktfmt',
+      files: ['Main.kt'],
+      output_mode: 'command',
+      output_mode_command: 'make format',
+      fail_on_error: false
+    })
+    expect(infoMock).toHaveBeenCalledWith('make format')
+  })
+
+  it('should print generated elide command in command output mode', async () => {
+    runFormatterMock.mockResolvedValue({
+      exitCode: 1,
+      stdout: '/workspace/Main.kt\n1 file checked\n'
+    })
+    await run({
+      formatter: 'ktfmt',
+      files: ['Main.kt'],
+      output_mode: 'command',
+      fail_on_error: false
+    })
+    expect(infoMock).toHaveBeenCalledWith(
+      expect.stringContaining('elide ktfmt -- /workspace/Main.kt')
+    )
+  })
+})
+
+describe('buildElideFlags', () => {
+  it('should return empty array for none mode', () => {
+    const opts = buildOptions({ output_mode: 'none' })
+    expect(buildElideFlags(opts)).toEqual([])
+  })
+
+  it('should return --list-files for file mode', () => {
+    const opts = buildOptions({ output_mode: 'file' })
+    expect(buildElideFlags(opts)).toEqual(['--list-files'])
+  })
+
+  it('should return --list-diffs for diff mode in check mode', () => {
+    const opts = buildOptions({ output_mode: 'diff', mode: 'check' })
+    expect(buildElideFlags(opts)).toEqual(['--list-diffs'])
+  })
+
+  it('should return --list-diffs=N when output_mode_diffs is set', () => {
+    const opts = buildOptions({
+      output_mode: 'diff',
+      mode: 'check',
+      output_mode_diffs: 5
+    })
+    expect(buildElideFlags(opts)).toEqual(['--list-diffs=5'])
+  })
+
+  it('should fall back to --list-files for diff mode in write mode', () => {
+    const opts = buildOptions({ output_mode: 'diff', mode: 'write' })
+    expect(buildElideFlags(opts)).toEqual(['--list-files'])
+  })
+
+  it('should return --list-files for command mode', () => {
+    const opts = buildOptions({ output_mode: 'command' })
+    expect(buildElideFlags(opts)).toEqual(['--list-files'])
+  })
+})
+
+describe('parseListedFiles', () => {
+  it('should parse file paths from --list-files output', () => {
+    const stdout = '/workspace/Main.kt\n/workspace/Foo.kt\n2 files checked\n'
+    expect(parseListedFiles(stdout)).toEqual([
+      '/workspace/Main.kt',
+      '/workspace/Foo.kt'
+    ])
+  })
+
+  it('should return empty array when only summary line is present', () => {
+    expect(parseListedFiles('0 files checked\n')).toEqual([])
+  })
+
+  it('should return empty array for empty output', () => {
+    expect(parseListedFiles('')).toEqual([])
+  })
+
+  it('should strip whitespace from lines', () => {
+    expect(parseListedFiles('  /a/b.kt  \n  1 file\n')).toEqual(['/a/b.kt'])
+  })
+})
+
+describe('parseDiffOutput', () => {
+  it('should strip the trailing summary line', () => {
+    const stdout = '--- a/Main.kt\n+++ b/Main.kt\n-bad\n+good\n1 file checked'
+    expect(parseDiffOutput(stdout)).toBe(
+      '--- a/Main.kt\n+++ b/Main.kt\n-bad\n+good'
+    )
+  })
+
+  it('should handle trailing newlines', () => {
+    const stdout = '--- a/Main.kt\n+++ b/Main.kt\n1 file checked\n\n'
+    expect(parseDiffOutput(stdout)).toBe('--- a/Main.kt\n+++ b/Main.kt')
+  })
+})
+
+describe('printOutputModeResult', () => {
+  beforeEach(() => infoMock.mockReset())
+
+  it('should do nothing for none mode', () => {
+    printOutputModeResult('none', 'ktfmt', '/workspace/Main.kt\n1 file\n', null)
+    expect(infoMock).not.toHaveBeenCalled()
+  })
+
+  it('should do nothing when stdout is empty', () => {
+    printOutputModeResult('file', 'ktfmt', '', null)
+    expect(infoMock).not.toHaveBeenCalled()
+  })
+
+  it('should print file list for file mode', () => {
+    printOutputModeResult(
+      'file',
+      'ktfmt',
+      '/workspace/A.kt\n/workspace/B.kt\n2 files\n',
+      null
+    )
+    expect(infoMock).toHaveBeenCalledWith('/workspace/A.kt')
+    expect(infoMock).toHaveBeenCalledWith('/workspace/B.kt')
+  })
+
+  it('should print diff for diff mode', () => {
+    printOutputModeResult(
+      'diff',
+      'ktfmt',
+      '--- a/Main.kt\n+++ b/Main.kt\n1 file\n',
+      null
+    )
+    expect(infoMock).toHaveBeenCalledWith(
+      expect.stringContaining('--- a/Main.kt')
+    )
+  })
+
+  it('should print custom command string for command mode', () => {
+    printOutputModeResult(
+      'command',
+      'ktfmt',
+      '/workspace/Main.kt\n1 file\n',
+      'make format'
+    )
+    expect(infoMock).toHaveBeenCalledWith('make format')
+  })
+
+  it('should generate elide command for command mode without custom command', () => {
+    printOutputModeResult(
+      'command',
+      'ktfmt',
+      '/workspace/Main.kt\n1 file\n',
+      null
+    )
+    expect(infoMock).toHaveBeenCalledWith(
+      expect.stringContaining('elide ktfmt -- /workspace/Main.kt')
+    )
   })
 })

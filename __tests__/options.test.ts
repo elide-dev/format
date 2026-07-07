@@ -17,6 +17,7 @@ mock.module('@actions/core', () => ({
 import buildOptions, {
   normalizeFormatter,
   normalizeMode,
+  normalizeOutputMode,
   parseArgs,
   parseFiles,
   buildOptionsFromInputs,
@@ -63,6 +64,26 @@ describe('normalizeMode', () => {
   })
 })
 
+describe('normalizeOutputMode', () => {
+  it('should recognize file mode', () => {
+    expect(normalizeOutputMode('file')).toBe('file')
+    expect(normalizeOutputMode('FILE')).toBe('file')
+  })
+  it('should recognize diff mode', () => {
+    expect(normalizeOutputMode('diff')).toBe('diff')
+    expect(normalizeOutputMode('DIFF')).toBe('diff')
+  })
+  it('should recognize command mode', () => {
+    expect(normalizeOutputMode('command')).toBe('command')
+    expect(normalizeOutputMode('COMMAND')).toBe('command')
+  })
+  it('should default unknown values to none', () => {
+    expect(normalizeOutputMode('none')).toBe('none')
+    expect(normalizeOutputMode('')).toBe('none')
+    expect(normalizeOutputMode('unknown')).toBe('none')
+  })
+})
+
 describe('parseArgs', () => {
   it('should split by whitespace', () => {
     expect(parseArgs('--aosp --style=google')).toEqual([
@@ -103,6 +124,22 @@ describe('buildOptions', () => {
     expect(opts.fail_on_error).toBe(true)
     expect(opts.telemetry).toBe(true)
     expect(opts.working_directory).toBeTruthy()
+    expect(opts.output_mode).toBe('none')
+    expect(opts.output_mode_diffs).toBeNull()
+    expect(opts.output_mode_command).toBeNull()
+  })
+  it('should allow overriding output_mode', () => {
+    expect(buildOptions({ output_mode: 'file' }).output_mode).toBe('file')
+    expect(buildOptions({ output_mode: 'diff' }).output_mode).toBe('diff')
+    expect(buildOptions({ output_mode: 'command' }).output_mode).toBe('command')
+  })
+  it('should allow setting output_mode_diffs', () => {
+    expect(buildOptions({ output_mode_diffs: 5 }).output_mode_diffs).toBe(5)
+  })
+  it('should allow setting output_mode_command', () => {
+    expect(
+      buildOptions({ output_mode_command: 'make fmt' }).output_mode_command
+    ).toBe('make fmt')
   })
   it('should allow overriding formatter', () => {
     expect(buildOptions({ formatter: 'ktfmt' }).formatter).toBe('ktfmt')
@@ -213,5 +250,36 @@ describe('buildOptionsFromInputs', () => {
     expect(opts.files).toEqual([])
     expect(opts.exclude).toEqual([])
     expect(opts.include_kts).toBe(false)
+    expect(opts.output_mode).toBe('none')
+    expect(opts.output_mode_diffs).toBeNull()
+    expect(opts.output_mode_command).toBeNull()
+  })
+
+  it('should read output-mode input', () => {
+    getInputMock.mockImplementation((name: string) =>
+      name === OptionName.OUTPUT_MODE ? 'file' : ''
+    )
+    expect(buildOptionsFromInputs().output_mode).toBe('file')
+  })
+
+  it('should read output-mode-diffs as integer', () => {
+    getInputMock.mockImplementation((name: string) =>
+      name === OptionName.OUTPUT_MODE_DIFFS ? '3' : ''
+    )
+    expect(buildOptionsFromInputs().output_mode_diffs).toBe(3)
+  })
+
+  it('should return null for invalid output-mode-diffs', () => {
+    getInputMock.mockImplementation((name: string) =>
+      name === OptionName.OUTPUT_MODE_DIFFS ? 'not-a-number' : ''
+    )
+    expect(buildOptionsFromInputs().output_mode_diffs).toBeNull()
+  })
+
+  it('should read output-mode-command as string', () => {
+    getInputMock.mockImplementation((name: string) =>
+      name === OptionName.OUTPUT_MODE_COMMAND ? 'make format' : ''
+    )
+    expect(buildOptionsFromInputs().output_mode_command).toBe('make format')
   })
 })

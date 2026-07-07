@@ -3,7 +3,8 @@ import { readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 import buildOptions, {
   buildOptionsFromInputs,
-  type ElideFormatActionOptions
+  type ElideFormatActionOptions,
+  type OutputMode
 } from './options'
 import { runFormatter, type FormatterName } from './command'
 import {
@@ -118,6 +119,82 @@ export function applyExclusions(files: string[], patterns: string[]): string[] {
   return files.filter(f => !patterns.some(p => matchesExcludePattern(f, p)))
 }
 
+export function buildElideFlags(opts: ElideFormatActionOptions): string[] {
+  switch (opts.output_mode) {
+    case 'file':
+      return ['--list-files']
+    case 'diff':
+      if (opts.mode !== 'check') return ['--list-files']
+      return opts.output_mode_diffs != null
+        ? [`--list-diffs=${opts.output_mode_diffs}`]
+        : ['--list-diffs']
+    case 'command':
+      return ['--list-files']
+    default:
+      return []
+  }
+}
+
+// Parses file paths from --list-files stdout. The last non-empty line is the
+// formatter summary; everything before it is file paths.
+export function parseListedFiles(stdout: string): string[] {
+  const lines = stdout
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean)
+  if (lines.length <= 1) return []
+  return lines.slice(0, -1)
+}
+
+// Parses diff content from --list-diffs stdout, stripping the trailing summary line.
+export function parseDiffOutput(stdout: string): string {
+  const lines = stdout.split('\n')
+  let lastNonEmpty = lines.length - 1
+  while (lastNonEmpty >= 0 && !lines[lastNonEmpty].trim()) lastNonEmpty--
+  return lines.slice(0, lastNonEmpty).join('\n').trimEnd()
+}
+
+export function printOutputModeResult(
+  outputMode: OutputMode,
+  formatter: FormatterName,
+  stdout: string,
+  customCommand: string | null
+): void {
+  if (outputMode === 'none' || !stdout) return
+
+  switch (outputMode) {
+    case 'file': {
+      const files = parseListedFiles(stdout)
+      if (files.length > 0) {
+        core.info(`Files affected by ${formatter}:`)
+        for (const f of files) core.info(f)
+      }
+      break
+    }
+    case 'diff': {
+      const diff = parseDiffOutput(stdout)
+      if (diff) {
+        core.info(`Diffs for ${formatter}:`)
+        core.info(diff)
+      }
+      break
+    }
+    case 'command': {
+      if (customCommand) {
+        core.info(customCommand)
+      } else {
+        const files = parseListedFiles(stdout)
+        if (files.length > 0) {
+          core.info(
+            `Run the following command to fix formatting:\nelide ${formatter} -- ${files.join(' ')}`
+          )
+        }
+      }
+      break
+    }
+  }
+}
+
 async function writeSummary(
   formatters: FormatterName[],
   results: Record<FormatterName, number>,
@@ -187,6 +264,7 @@ export async function run(
 
       const results: Partial<Record<FormatterName, number>> = {}
       let totalFiles = 0
+      const elideFlags = buildElideFlags(effectiveOptions)
 
       for (const formatter of formatters) {
         const resolved = resolveFiles(effectiveOptions, formatter)
@@ -205,7 +283,7 @@ export async function run(
             ? effectiveOptions.gjf_args
             : effectiveOptions.ktfmt_args
 
-        const exitCode: number = await core.group(
+        const { exitCode, stdout } = await core.group(
           `Running ${formatter}`,
           async () =>
             withSpan(`format.${formatter}`, 'format', () =>
@@ -214,12 +292,19 @@ export async function run(
                 effectiveOptions.mode,
                 files,
                 extraArgs,
-                effectiveOptions.working_directory
+                effectiveOptions.working_directory,
+                elideFlags
               )
             )
         )
 
         results[formatter] = exitCode
+        printOutputModeResult(
+          effectiveOptions.output_mode,
+          formatter,
+          stdout,
+          effectiveOptions.output_mode_command
+        )
 
         if (exitCode !== 0) {
           core.error(`${formatter} check failed (exit code ${exitCode})`, {
