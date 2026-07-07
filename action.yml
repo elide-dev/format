@@ -59,7 +59,7 @@ inputs:
   output-mode:
     description: >
       Output mode after the formatter runs: none (default), file (print affected file paths),
-      diff (print patch-compatible diffs, check mode only), or command (print a fix command).
+      diff (print unified diffs, check mode only), or command (print a fix command).
     required: false
     default: 'none'
 
