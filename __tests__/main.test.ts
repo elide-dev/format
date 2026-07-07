@@ -915,7 +915,7 @@ describe('printOutputModeResult', () => {
     )
   })
 
-  it('should generate elide command for javaformat with -r write flag', () => {
+  it('should generate elide command for javaformat with -r write flag after --', () => {
     printOutputModeResult(
       'command',
       'javaformat',
@@ -923,7 +923,7 @@ describe('printOutputModeResult', () => {
       null
     )
     expect(infoMock).toHaveBeenCalledWith(
-      expect.stringContaining("elide javaformat -r -- '/workspace/Main.java'")
+      expect.stringContaining("elide javaformat -- -r '/workspace/Main.java'")
     )
   })
 

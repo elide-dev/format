@@ -214,9 +214,9 @@ export function printOutputModeResult(
         if (files.length > 0) {
           const writeFlags = WRITE_FLAGS[formatter]
           const args = [
+            '--',
             ...writeFlags,
             ...extraArgs.map(shellQuote),
-            '--',
             ...files.map(shellQuote)
           ]
           core.info(
