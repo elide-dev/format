@@ -71,7 +71,8 @@ const {
   parseListedFiles,
   parseDiffOutput,
   isDiffOutput,
-  printOutputModeResult
+  printOutputModeResult,
+  formatDiff
 } = await import('../src/main')
 const { default: buildOptions } = await import('../src/options')
 
@@ -997,5 +998,43 @@ describe('isDiffOutput', () => {
 
   it('should return false for empty string', () => {
     expect(isDiffOutput('')).toBe(false)
+  })
+})
+
+describe('formatDiff', () => {
+  it('should color addition lines green and deletion lines red', () => {
+    const result = formatDiff(
+      'ktfmt',
+      '--- a/Main.kt\n+++ b/Main.kt\n-old\n+new\n'
+    )
+    expect(result).toContain('\x1b[32m+')
+    expect(result).toContain('\x1b[31m-')
+  })
+
+  it('should dim --- and +++ file header lines', () => {
+    const result = formatDiff('ktfmt', '--- a/Main.kt\n+++ b/Main.kt\n')
+    expect(result).toContain('\x1b[2m--- a/Main.kt')
+    expect(result).toContain('\x1b[2m+++ b/Main.kt')
+  })
+
+  it('should color @@ hunk headers cyan', () => {
+    const result = formatDiff('ktfmt', '@@ -1,3 +1,3 @@\n')
+    expect(result).toContain('\x1b[36m@@ -1,3 +1,3 @@')
+  })
+
+  it('should not color +++ and --- lines as + and - diff signs', () => {
+    const result = formatDiff('ktfmt', '--- a/Main.kt\n+++ b/Main.kt\n')
+    expect(result).not.toContain('\x1b[32m+++')
+    expect(result).not.toContain('\x1b[31m---')
+  })
+
+  it('should preserve context lines as-is', () => {
+    const result = formatDiff('ktfmt', ' val x = 1\n')
+    expect(result).toContain('val x = 1')
+  })
+
+  it('should color addition lines green for javaformat', () => {
+    const result = formatDiff('javaformat', '+public class Foo {}\n')
+    expect(result).toContain('\x1b[32m+')
   })
 })

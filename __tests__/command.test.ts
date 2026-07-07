@@ -34,7 +34,7 @@ describe('buildFormatterArgs', () => {
 
   it('should build javaformat write args', () => {
     expect(buildFormatterArgs('javaformat', 'write', ['Foo.java'], [])).toEqual(
-      ['javaformat', '--', 'Foo.java']
+      ['javaformat', '--', '-r', 'Foo.java']
     )
   })
 
@@ -83,7 +83,7 @@ describe('buildFormatterArgs', () => {
   it('should place extra args before files in write mode', () => {
     expect(
       buildFormatterArgs('javaformat', 'write', ['Foo.java'], ['--aosp'])
-    ).toEqual(['javaformat', '--', '--aosp', 'Foo.java'])
+    ).toEqual(['javaformat', '--', '-r', '--aosp', 'Foo.java'])
   })
 
   it('should always include the -- separator', () => {
@@ -113,7 +113,14 @@ describe('buildFormatterArgs', () => {
         [],
         ['--list-files', '--verbose']
       )
-    ).toEqual(['javaformat', '--list-files', '--verbose', '--', 'Foo.java'])
+    ).toEqual([
+      'javaformat',
+      '--list-files',
+      '--verbose',
+      '--',
+      '-r',
+      'Foo.java'
+    ])
   })
 })
 

@@ -28,7 +28,7 @@ export function buildFormatterArgs(
     formatter,
     ...elideFlags,
     '--',
-    ...(mode === 'check' ? CHECK_FLAGS[formatter] : []),
+    ...(mode === 'check' ? CHECK_FLAGS[formatter] : WRITE_FLAGS[formatter]),
     ...extraArgs,
     ...files
   ]
