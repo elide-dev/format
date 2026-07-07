@@ -1,7 +1,7 @@
 {
   "name": "@elide-dev/format",
   "description": "GitHub Action to check source formatting using Elide",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "author": "Elide Team (https://elide.dev)",
   "private": true,
   "homepage": "https://github.com/elide-dev/format",
@@ -31,12 +31,12 @@
   "dependencies": {
     "@actions/core": "3.0.1",
     "@actions/exec": "3.0.0",
-    "@sentry/node": "^10.46.0",
+    "@sentry/node": "^10.63.0",
     "syntax": "^1.6.3"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.9",
-    "@commitlint/cli": "20.5.0",
+    "@biomejs/biome": "^2.5.2",
+    "@commitlint/cli": "21.2.0",
     "@commitlint/config-conventional": "21.2.0",
     "@types/bun": "latest",
     "@types/node": "26.1.0",
