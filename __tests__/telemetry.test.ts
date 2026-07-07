@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest, mock } from 'bun:test'
+import { beforeEach, describe, expect, it, jest, mock } from 'bun:test'
 
 const initMock = jest.fn()
 const setTagsMock = jest.fn()

@@ -1,8 +1,8 @@
-import * as core from '@actions/core'
-import * as exec from '@actions/exec'
-import { writeFileSync, unlinkSync } from 'node:fs'
+import { unlinkSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import * as core from '@actions/core'
+import * as exec from '@actions/exec'
 import type { FormatMode } from './options'
 
 export type FormatterName = 'javaformat' | 'ktfmt'

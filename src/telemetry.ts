@@ -1,5 +1,5 @@
-import * as Sentry from '@sentry/node'
 import type { Event } from '@sentry/node'
+import * as Sentry from '@sentry/node'
 import type { ElideFormatActionOptions } from './options'
 
 // Public DSN — not a secret. Only allows sending events, not reading them.
