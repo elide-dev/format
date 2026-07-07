@@ -31,7 +31,8 @@
   "dependencies": {
     "@actions/core": "3.0.1",
     "@actions/exec": "3.0.0",
-    "@sentry/node": "^10.46.0"
+    "@sentry/node": "^10.46.0",
+    "syntax": "^1.6.3"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.9",
