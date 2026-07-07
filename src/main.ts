@@ -1,6 +1,8 @@
 import * as core from '@actions/core'
 import { readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
+import 'sax'
+import 'tokenizr'
 import Syntax from 'syntax'
 import buildOptions, {
   buildOptionsFromInputs,
