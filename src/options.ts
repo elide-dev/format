@@ -121,10 +121,11 @@ function stringInput(name: string, defaultValue?: string): string | undefined {
 }
 
 function integerInput(name: string): number | null {
-  const value = core.getInput(name)
+  const value = core.getInput(name).trim()
   if (!value) return null
+  if (!/^\d+$/.test(value)) return null
   const n = parseInt(value, 10)
-  return isNaN(n) ? null : n
+  return n > 0 ? n : null
 }
 
 export function buildOptionsFromInputs(): ElideFormatActionOptions {
