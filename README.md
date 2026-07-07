@@ -67,6 +67,29 @@ This checks all `.java` and `.kt` files in the repository for correct formatting
     fail-on-error: false
 ```
 
+**List affected files after a failed check**
+```yaml
+- uses: elide-dev/format
+  with:
+    output-mode: file
+```
+
+**Print diffs for unformatted files (check mode only)**
+```yaml
+- uses: elide-dev/format
+  with:
+    mode: check
+    output-mode: diff
+```
+
+**Print a fix command instead of file names**
+```yaml
+- uses: elide-dev/format
+  with:
+    output-mode: command
+    output-mode-command: make format  # omit to generate an elide command automatically
+```
+
 **Pass extra arguments to the formatters**
 ```yaml
 - uses: elide-dev/format
@@ -87,6 +110,22 @@ This checks all `.java` and `.kt` files in the repository for correct formatting
     echo "Files checked: ${{ steps.format.outputs.files-checked }}"
 ```
 
+**Pass failing files to a subsequent step**
+```yaml
+- name: "Format: Check"
+  id: format
+  uses: elide-dev/format
+  with:
+    output-mode: file
+    fail-on-error: false
+
+- name: "Annotate"
+  run: |
+    echo "${{ steps.format.outputs.files-failed }}" | while read f; do
+      echo "::warning file=$f::File needs formatting"
+    done
+```
+
 ## Inputs
 
 | Input               | Type      | Default                   | Description                                                                                                                      |
@@ -101,17 +140,21 @@ This checks all `.java` and `.kt` files in the repository for correct formatting
 | `include-kts`       | `boolean` | `false`                   | Include `.kts` (Kotlin script) files when running ktfmt                                                                          |
 | `fail-on-error`     | `boolean` | `true`                    | Fail the workflow when formatting check fails                                                                                    |
 | `telemetry`         | `boolean` | `true`                    | Enable anonymous error telemetry ([details](#telemetry))                                                                         |
+| `output-mode`       | `string`  | `none`                    | Output mode after the formatter runs: `none`, `file` (list affected files), `diff` (print diffs, check mode only), or `command` (print a fix command) |
+| `output-mode-diffs` | `integer` |                           | When `output-mode` is `diff`, limit the number of diffs shown. When exceeded, falls back to listing file paths. Must be a positive integer. |
+| `output-mode-command` | `string` |                          | When `output-mode` is `command`, print this string instead of the generated elide command (e.g. `make format`)                   |
 
 ## Outputs
 
-| Output          | Description                          |
-|-----------------|--------------------------------------|
-| `result`        | Check result: `success` or `failure` |
-| `files-checked` | Number of files checked              |
+| Output          | Description                                                                                        |
+|-----------------|----------------------------------------------------------------------------------------------------|
+| `result`        | Check result: `success` or `failure`                                                               |
+| `files-checked` | Number of files checked                                                                            |
+| `files-failed`  | Newline-separated list of files affected by the formatter: files that failed the format check (check mode) or were reformatted (write mode). Only set when `output-mode` is `file`. |
 
 ## File Discovery
 
-When `files` is not set, the action scans `working-directory` recursively for source files by extension (`.java` for `javaformat`, `.kt` and optionally `.kts` for `ktfmt`). The following directories are always skipped during scanning: `node_modules`, `.git`, `build`, `dist`, `target`, `.gradle`, `.idea`, `out`.
+When `files` is not set, the action scans `working-directory` recursively for source files by extension (`.java` for `javaformat`, `.kt` and optionally `.kts` for `ktfmt`).
 
 When `files` is provided, each entry can be an individual file or a directory. Directories are expanded recursively using the same extension filter. The `exclude` patterns are applied after all file resolution.
 

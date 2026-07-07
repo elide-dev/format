@@ -69,6 +69,7 @@ const {
   buildElideFlags,
   parseListedFiles,
   parseDiffOutput,
+  isDiffOutput,
   printOutputModeResult
 } = await import('../src/main')
 const { default: buildOptions } = await import('../src/options')
@@ -731,7 +732,51 @@ describe('run', () => {
       fail_on_error: false
     })
     expect(infoMock).toHaveBeenCalledWith(
-      expect.stringContaining('elide ktfmt -- /workspace/Main.kt')
+      expect.stringContaining("elide ktfmt -- '/workspace/Main.kt'")
+    )
+  })
+
+  it('should set files-failed output when output_mode is file', async () => {
+    runFormatterMock.mockResolvedValue({
+      exitCode: 1,
+      stdout: '/workspace/Main.kt\n/workspace/Foo.kt\n2 files checked\n'
+    })
+    await run({
+      formatter: 'ktfmt',
+      files: ['Main.kt', 'Foo.kt'],
+      output_mode: 'file',
+      fail_on_error: false
+    })
+    expect(setOutputMock).toHaveBeenCalledWith(
+      ActionOutputName.FILES_FAILED,
+      '/workspace/Main.kt\n/workspace/Foo.kt'
+    )
+  })
+
+  it('should set files-failed to empty string when no files fail', async () => {
+    runFormatterMock.mockResolvedValue({ exitCode: 0, stdout: '' })
+    await run({
+      formatter: 'ktfmt',
+      files: ['Main.kt'],
+      output_mode: 'file'
+    })
+    expect(setOutputMock).toHaveBeenCalledWith(ActionOutputName.FILES_FAILED, '')
+  })
+
+  it('should not set files-failed when output_mode is not file', async () => {
+    runFormatterMock.mockResolvedValue({
+      exitCode: 1,
+      stdout: '/workspace/Main.kt\n1 file checked\n'
+    })
+    await run({
+      formatter: 'ktfmt',
+      files: ['Main.kt'],
+      output_mode: 'none',
+      fail_on_error: false
+    })
+    expect(setOutputMock).not.toHaveBeenCalledWith(
+      ActionOutputName.FILES_FAILED,
+      expect.anything()
     )
   })
 })
@@ -862,7 +907,79 @@ describe('printOutputModeResult', () => {
       null
     )
     expect(infoMock).toHaveBeenCalledWith(
-      expect.stringContaining('elide ktfmt -- /workspace/Main.kt')
+      expect.stringContaining("elide ktfmt -- '/workspace/Main.kt'")
     )
+  })
+
+  it('should shell-quote paths with spaces in command mode', () => {
+    printOutputModeResult(
+      'command',
+      'ktfmt',
+      '/workspace/my project/Main.kt\n1 file\n',
+      null
+    )
+    expect(infoMock).toHaveBeenCalledWith(
+      expect.stringContaining("'/workspace/my project/Main.kt'")
+    )
+  })
+
+  it('should fall back to file listing for diff mode when output is not a diff', () => {
+    // elide fell back to --list-files (e.g. write mode or --list-diffs=N limit exceeded)
+    printOutputModeResult(
+      'diff',
+      'ktfmt',
+      '/workspace/Main.kt\n/workspace/Foo.kt\n2 files\n',
+      null
+    )
+    expect(infoMock).toHaveBeenCalledWith('/workspace/Main.kt')
+    expect(infoMock).toHaveBeenCalledWith('/workspace/Foo.kt')
+    expect(infoMock).not.toHaveBeenCalledWith(
+      expect.stringContaining('Diffs for')
+    )
+  })
+
+  it('should print diff content for diff mode when output is a real diff', () => {
+    printOutputModeResult(
+      'diff',
+      'ktfmt',
+      '--- a/Main.kt\n+++ b/Main.kt\n-bad\n+good\n1 file\n',
+      null
+    )
+    expect(infoMock).toHaveBeenCalledWith(
+      expect.stringContaining('Diffs for ktfmt')
+    )
+    expect(infoMock).toHaveBeenCalledWith(
+      expect.stringContaining('--- a/Main.kt')
+    )
+  })
+})
+
+describe('isDiffOutput', () => {
+  it('should return true for unified diff output', () => {
+    expect(
+      isDiffOutput('--- a/Main.kt\n+++ b/Main.kt\n@@ -1 +1 @@\n-bad\n+good\n')
+    ).toBe(true)
+  })
+
+  it('should return true when only --- is present on the first line', () => {
+    expect(isDiffOutput('--- a/Main.kt\nsome content\n')).toBe(true)
+  })
+
+  it('should return true when +++ is on the second non-empty line', () => {
+    expect(isDiffOutput('--- a/Main.kt\n+++ b/Main.kt\n')).toBe(true)
+  })
+
+  it('should return true when @@ is on the third non-empty line', () => {
+    expect(isDiffOutput('--- a\n+++ b\n@@ -1 +1 @@\n')).toBe(true)
+  })
+
+  it('should return false for file-listing output', () => {
+    expect(isDiffOutput('/workspace/Main.kt\n/workspace/Foo.kt\n2 files\n')).toBe(
+      false
+    )
+  })
+
+  it('should return false for empty string', () => {
+    expect(isDiffOutput('')).toBe(false)
   })
 })

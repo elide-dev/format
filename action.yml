@@ -83,6 +83,9 @@ outputs:
   files-checked:
     description: 'Number of files checked'
 
+  files-failed:
+    description: 'Newline-separated list of files affected by the formatter: files that failed the format check (check mode) or were reformatted (write mode). Only set when output-mode is file.'
+
 runs:
   using: node24
   main: dist/index.js

@@ -18,7 +18,8 @@ import {
 
 export enum ActionOutputName {
   RESULT = 'result',
-  FILES_CHECKED = 'files-checked'
+  FILES_CHECKED = 'files-checked',
+  FILES_FAILED = 'files-failed'
 }
 
 export function findFiles(
@@ -154,6 +155,22 @@ export function parseDiffOutput(stdout: string): string {
   return lines.slice(0, lastNonEmpty).join('\n').trimEnd()
 }
 
+// Returns true if stdout looks like unified diff output (---/+++/@@ markers).
+// Used to distinguish diff output from file-listing output when elide falls back
+// (e.g. --list-diffs=N limit exceeded, or write mode falls back to --list-files).
+export function isDiffOutput(stdout: string): boolean {
+  const lines = stdout.split('\n').filter(l => l.trim())
+  return (
+    lines[0]?.startsWith('---') === true ||
+    lines[1]?.startsWith('+++') === true ||
+    lines[2]?.startsWith('@@') === true
+  )
+}
+
+function shellQuote(p: string): string {
+  return `'${p.replace(/'/g, "'\\''")}'`
+}
+
 export function printOutputModeResult(
   outputMode: OutputMode,
   formatter: FormatterName,
@@ -172,10 +189,19 @@ export function printOutputModeResult(
       break
     }
     case 'diff': {
-      const diff = parseDiffOutput(stdout)
-      if (diff) {
-        core.info(`Diffs for ${formatter}:`)
-        core.info(diff)
+      if (isDiffOutput(stdout)) {
+        const diff = parseDiffOutput(stdout)
+        if (diff) {
+          core.info(`Diffs for ${formatter}:`)
+          core.info(diff)
+        }
+      } else {
+        // elide fell back to file listing (write mode, or --list-diffs=N limit exceeded)
+        const files = parseListedFiles(stdout)
+        if (files.length > 0) {
+          core.info(`Files affected by ${formatter}:`)
+          for (const f of files) core.info(f)
+        }
       }
       break
     }
@@ -186,7 +212,7 @@ export function printOutputModeResult(
         const files = parseListedFiles(stdout)
         if (files.length > 0) {
           core.info(
-            `Run the following command to fix formatting:\nelide ${formatter} -- ${files.join(' ')}`
+            `Run the following command to fix formatting:\nelide ${formatter} -- ${files.map(shellQuote).join(' ')}`
           )
         }
       }
@@ -265,6 +291,7 @@ export async function run(
       const results: Partial<Record<FormatterName, number>> = {}
       let totalFiles = 0
       const elideFlags = buildElideFlags(effectiveOptions)
+      const failedFiles: string[] = []
 
       for (const formatter of formatters) {
         const resolved = resolveFiles(effectiveOptions, formatter)
@@ -305,6 +332,9 @@ export async function run(
           stdout,
           effectiveOptions.output_mode_command
         )
+        if (effectiveOptions.output_mode === 'file') {
+          failedFiles.push(...parseListedFiles(stdout))
+        }
 
         if (exitCode !== 0) {
           core.error(`${formatter} check failed (exit code ${exitCode})`, {
@@ -320,6 +350,9 @@ export async function run(
 
       core.setOutput(ActionOutputName.RESULT, success ? 'success' : 'failure')
       core.setOutput(ActionOutputName.FILES_CHECKED, String(totalFiles))
+      if (effectiveOptions.output_mode === 'file') {
+        core.setOutput(ActionOutputName.FILES_FAILED, failedFiles.join('\n'))
+      }
 
       recordMetric('format.duration_ms', elapsed, 'millisecond', {
         formatter: effectiveOptions.formatter,
