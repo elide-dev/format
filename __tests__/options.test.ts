@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest, mock } from 'bun:test'
+import { beforeEach, describe, expect, it, jest, mock } from 'bun:test'
 
 const getInputMock = jest.fn().mockReturnValue('')
 const getBooleanInputMock = jest.fn().mockReturnValue(true)
@@ -15,13 +15,13 @@ mock.module('@actions/core', () => ({
 }))
 
 import buildOptions, {
+  buildOptionsFromInputs,
   normalizeFormatter,
   normalizeMode,
   normalizeOutputMode,
+  OptionName,
   parseArgs,
-  parseFiles,
-  buildOptionsFromInputs,
-  OptionName
+  parseFiles
 } from '../src/options'
 
 describe('normalizeFormatter', () => {
@@ -226,8 +226,8 @@ describe('buildOptionsFromInputs', () => {
   })
 
   it('should read include-kts input', () => {
-    getBooleanInputMock.mockImplementation((name: string) =>
-      name === OptionName.INCLUDE_KTS ? true : true
+    getBooleanInputMock.mockImplementation(
+      (name: string) => name === OptionName.INCLUDE_KTS && true
     )
     expect(buildOptionsFromInputs().include_kts).toBe(true)
   })

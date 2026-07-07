@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest, mock } from 'bun:test'
+import { beforeEach, describe, expect, it, jest, mock } from 'bun:test'
 
 const readdirSyncMock = jest.fn().mockReturnValue([])
 const statSyncMock = jest.fn().mockReturnValue({ isDirectory: () => false })
@@ -707,7 +707,7 @@ describe('run', () => {
     expect(infoMock).toHaveBeenCalledWith('/workspace/Foo.kt')
   })
 
-  it('should print custom command in command output mode when output_mode_command is set', async () => {
+  it('should use custom command in run-locally message when output_mode_command is set', async () => {
     runFormatterMock.mockResolvedValue({
       exitCode: 1,
       stdout: '/workspace/Main.kt\n1 file checked\n'
@@ -719,7 +719,11 @@ describe('run', () => {
       output_mode_command: 'make format',
       fail_on_error: false
     })
-    expect(infoMock).toHaveBeenCalledWith('make format')
+    expect(infoMock).not.toHaveBeenCalledWith('make format')
+    expect(warningMock).toHaveBeenCalledWith(
+      expect.stringContaining('make format'),
+      expect.any(Object)
+    )
   })
 
   it('should print generated elide command in command output mode', async () => {
@@ -735,6 +739,70 @@ describe('run', () => {
     })
     expect(infoMock).toHaveBeenCalledWith(
       expect.stringContaining("elide ktfmt -- '/workspace/Main.kt'")
+    )
+  })
+
+  it('should include generated command in failure message when no custom command', async () => {
+    runFormatterMock.mockResolvedValue({
+      exitCode: 1,
+      stdout: '/workspace/Main.kt\n1 file checked\n'
+    })
+    await run({
+      formatter: 'ktfmt',
+      files: ['Main.kt'],
+      output_mode: 'command',
+      fail_on_error: false
+    })
+    expect(warningMock).toHaveBeenCalledWith(
+      expect.stringContaining("elide ktfmt -- '/workspace/Main.kt'"),
+      expect.any(Object)
+    )
+  })
+
+  it('should include generated javaformat command in failure message', async () => {
+    runFormatterMock.mockResolvedValue({
+      exitCode: 1,
+      stdout: '/workspace/Main.java\n1 file checked\n'
+    })
+    await run({
+      formatter: 'javaformat',
+      files: ['Main.java'],
+      output_mode: 'command',
+      fail_on_error: false
+    })
+    expect(warningMock).toHaveBeenCalledWith(
+      expect.stringContaining("elide javaformat -- -r '/workspace/Main.java'"),
+      expect.any(Object)
+    )
+  })
+
+  it('should not include run-locally in failure message when output_mode is not command', async () => {
+    runFormatterMock.mockResolvedValue({
+      exitCode: 1,
+      stdout: '/workspace/Main.kt\n1 file checked\n'
+    })
+    await run({
+      formatter: 'ktfmt',
+      files: ['Main.kt'],
+      output_mode: 'file',
+      fail_on_error: false
+    })
+    expect(warningMock).toHaveBeenCalledWith(
+      expect.not.stringContaining('Run locally'),
+      expect.any(Object)
+    )
+  })
+
+  it('should not include run-locally in failure message when output_mode is none', async () => {
+    runFormatterMock.mockResolvedValue({ exitCode: 1, stdout: '' })
+    await run({
+      formatter: 'ktfmt',
+      files: ['Main.kt'],
+      fail_on_error: false
+    })
+    expect(warningMock).toHaveBeenCalledWith(
+      expect.not.stringContaining('Run locally'),
+      expect.any(Object)
     )
   })
 
@@ -894,14 +962,14 @@ describe('printOutputModeResult', () => {
     )
   })
 
-  it('should print custom command string for command mode', () => {
+  it('should not print bare custom command string for command mode', () => {
     printOutputModeResult(
       'command',
       'ktfmt',
       '/workspace/Main.kt\n1 file\n',
       'make format'
     )
-    expect(infoMock).toHaveBeenCalledWith('make format')
+    expect(infoMock).not.toHaveBeenCalled()
   })
 
   it('should generate elide command for ktfmt without write flag', () => {

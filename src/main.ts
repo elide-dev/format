@@ -1,19 +1,19 @@
-import * as core from '@actions/core'
 import { readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
+import * as core from '@actions/core'
+import { type FormatterName, runFormatter, WRITE_FLAGS } from './command'
 import buildOptions, {
   buildOptionsFromInputs,
   type ElideFormatActionOptions,
   type OutputMode
 } from './options'
-import { runFormatter, WRITE_FLAGS, type FormatterName } from './command'
 import {
-  initTelemetry,
-  reportError,
   flushTelemetry,
-  withSpan,
+  initTelemetry,
+  logEvent,
   recordMetric,
-  logEvent
+  reportError,
+  withSpan
 } from './telemetry'
 
 export enum ActionOutputName {
@@ -96,9 +96,9 @@ export function matchesExcludePattern(
   if (!normPattern.includes('*') && !normPattern.includes('?')) {
     return (
       normalized === normPattern ||
-      normalized.startsWith(normPattern + '/') ||
-      normalized.includes('/' + normPattern + '/') ||
-      normalized.endsWith('/' + normPattern)
+      normalized.startsWith(`${normPattern}/`) ||
+      normalized.includes(`/${normPattern}/`) ||
+      normalized.endsWith(`/${normPattern}`)
     )
   }
 
@@ -194,8 +194,8 @@ export function printOutputModeResult(
   stdout: string,
   customCommand: string | null,
   extraArgs: string[] = []
-): void {
-  if (outputMode === 'none' || !stdout) return
+): string | null {
+  if (outputMode === 'none' || !stdout) return null
 
   switch (outputMode) {
     case 'file': {
@@ -204,7 +204,7 @@ export function printOutputModeResult(
         core.info(`Files affected by ${formatter}:`)
         for (const f of files) core.info(f)
       }
-      break
+      return null
     }
     case 'diff': {
       if (isDiffOutput(stdout)) {
@@ -221,29 +221,27 @@ export function printOutputModeResult(
           for (const f of files) core.info(f)
         }
       }
-      break
+      return null
     }
     case 'command': {
-      if (customCommand) {
-        core.info(customCommand)
-      } else {
-        const files = parseListedFiles(stdout)
-        if (files.length > 0) {
-          const writeFlags = WRITE_FLAGS[formatter]
-          const args = [
-            '--',
-            ...writeFlags,
-            ...extraArgs.map(shellQuote),
-            ...files.map(shellQuote)
-          ]
-          core.info(
-            `Run the following command to fix formatting:\nelide ${formatter} ${args.join(' ')}`
-          )
-        }
+      if (customCommand) return customCommand
+      const files = parseListedFiles(stdout)
+      if (files.length > 0) {
+        const writeFlags = WRITE_FLAGS[formatter]
+        const args = [
+          '--',
+          ...writeFlags,
+          ...extraArgs.map(shellQuote),
+          ...files.map(shellQuote)
+        ]
+        const cmd = `elide ${formatter} ${args.join(' ')}`
+        core.info(`Run the following command to fix formatting:\n${cmd}`)
+        return cmd
       }
-      break
+      return null
     }
   }
+  return null
 }
 
 async function writeSummary(
@@ -314,6 +312,7 @@ export async function run(
           : [effectiveOptions.formatter]
 
       const results: Partial<Record<FormatterName, number>> = {}
+      const fixCommands: Partial<Record<FormatterName, string>> = {}
       let totalFiles = 0
       const elideFlags = buildElideFlags(effectiveOptions)
       const failedFiles: string[] = []
@@ -351,13 +350,14 @@ export async function run(
         )
 
         results[formatter] = exitCode
-        printOutputModeResult(
+        const fixCmd = printOutputModeResult(
           effectiveOptions.output_mode,
           formatter,
           stdout,
           effectiveOptions.output_mode_command,
           extraArgs
         )
+        if (fixCmd !== null) fixCommands[formatter] = fixCmd
         if (effectiveOptions.output_mode === 'file') {
           failedFiles.push(...parseListedFiles(stdout))
         }
@@ -400,11 +400,16 @@ export async function run(
       )
 
       if (!success) {
-        const failed = Object.entries(results)
-          .filter(([, code]) => code !== 0)
-          .map(([f]) => `elide ${f}`)
-          .join(', ')
-        const message = `Format check failed. Run locally to fix: ${failed}`
+        let message = 'Format check failed'
+        if (effectiveOptions.output_mode === 'command') {
+          const failedFormatters = Object.entries(results)
+            .filter(([, code]) => code !== 0)
+            .map(([f]) => f)
+          const cmds = [
+            ...new Set(failedFormatters.map(f => fixCommands[f] ?? `elide ${f}`))
+          ]
+          message += `. Run locally to fix: ${cmds.join(', ')}`
+        }
 
         if (effectiveOptions.fail_on_error) {
           core.setFailed(message)

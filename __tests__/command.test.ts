@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest, mock } from 'bun:test'
+import { beforeEach, describe, expect, it, jest, mock } from 'bun:test'
 
 const execMock = jest.fn().mockResolvedValue(0)
 const debugMock = jest.fn()
