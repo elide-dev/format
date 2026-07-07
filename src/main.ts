@@ -406,7 +406,9 @@ export async function run(
             .filter(([, code]) => code !== 0)
             .map(([f]) => f)
           const cmds = [
-            ...new Set(failedFormatters.map(f => fixCommands[f] ?? `elide ${f}`))
+            ...new Set(
+              failedFormatters.map(f => fixCommands[f] ?? `elide ${f}`)
+            )
           ]
           message += `. Run locally to fix: ${cmds.join(', ')}`
         }
