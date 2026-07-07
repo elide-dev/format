@@ -227,7 +227,7 @@ describe('buildOptionsFromInputs', () => {
 
   it('should read include-kts input', () => {
     getBooleanInputMock.mockImplementation(
-      (name: string) => name === OptionName.INCLUDE_KTS && true
+      (name: string) => name === OptionName.INCLUDE_KTS
     )
     expect(buildOptionsFromInputs().include_kts).toBe(true)
   })

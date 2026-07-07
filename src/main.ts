@@ -226,7 +226,6 @@ export function printOutputModeResult(
       return null
     }
     case 'command': {
-      if (customCommand) return customCommand
       const files = parseListedFiles(stdout)
       if (files.length > 0) {
         const writeFlags = WRITE_FLAGS[formatter]
