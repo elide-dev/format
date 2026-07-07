@@ -10,11 +10,15 @@ export enum OptionName {
   KTFMT_ARGS = 'ktfmt-args',
   INCLUDE_KTS = 'include-kts',
   FAIL_ON_ERROR = 'fail-on-error',
-  TELEMETRY = 'telemetry'
+  TELEMETRY = 'telemetry',
+  OUTPUT_MODE = 'output-mode',
+  OUTPUT_MODE_DIFFS = 'output-mode-diffs',
+  OUTPUT_MODE_COMMAND = 'output-mode-command'
 }
 
 export type FormatterChoice = 'javaformat' | 'ktfmt' | 'all'
 export type FormatMode = 'check' | 'write'
+export type OutputMode = 'none' | 'file' | 'diff' | 'command'
 
 export interface ElideFormatActionOptions {
   formatter: FormatterChoice
@@ -29,6 +33,9 @@ export interface ElideFormatActionOptions {
   include_kts: boolean
   fail_on_error: boolean
   telemetry: boolean
+  output_mode: OutputMode
+  output_mode_diffs: number | null
+  output_mode_command: string | null
 }
 
 export const defaults: ElideFormatActionOptions = {
@@ -41,7 +48,10 @@ export const defaults: ElideFormatActionOptions = {
   ktfmt_args: [],
   include_kts: false,
   fail_on_error: true,
-  telemetry: true
+  telemetry: true,
+  output_mode: 'none',
+  output_mode_diffs: null,
+  output_mode_command: null
 }
 
 export function normalizeFormatter(value: string): FormatterChoice {
@@ -64,6 +74,19 @@ export function normalizeMode(value: string): FormatMode {
       return 'write'
     default:
       return 'check'
+  }
+}
+
+export function normalizeOutputMode(value: string): OutputMode {
+  switch (value.trim().toLowerCase()) {
+    case 'file':
+      return 'file'
+    case 'diff':
+      return 'diff'
+    case 'command':
+      return 'command'
+    default:
+      return 'none'
   }
 }
 
@@ -97,6 +120,13 @@ function stringInput(name: string, defaultValue?: string): string | undefined {
   return value || defaultValue || undefined
 }
 
+function integerInput(name: string): number | null {
+  const value = core.getInput(name)
+  if (!value) return null
+  const n = parseInt(value, 10)
+  return isNaN(n) ? null : n
+}
+
 export function buildOptionsFromInputs(): ElideFormatActionOptions {
   return buildOptions({
     formatter: normalizeFormatter(
@@ -113,6 +143,11 @@ export function buildOptionsFromInputs(): ElideFormatActionOptions {
     ktfmt_args: parseArgs(stringInput(OptionName.KTFMT_ARGS, '') ?? ''),
     include_kts: booleanInput(OptionName.INCLUDE_KTS, false),
     fail_on_error: booleanInput(OptionName.FAIL_ON_ERROR, true),
-    telemetry: booleanInput(OptionName.TELEMETRY, true)
+    telemetry: booleanInput(OptionName.TELEMETRY, true),
+    output_mode: normalizeOutputMode(
+      stringInput(OptionName.OUTPUT_MODE, 'none') as string
+    ),
+    output_mode_diffs: integerInput(OptionName.OUTPUT_MODE_DIFFS),
+    output_mode_command: stringInput(OptionName.OUTPUT_MODE_COMMAND) ?? null
   })
 }

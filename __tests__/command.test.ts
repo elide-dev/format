@@ -90,6 +90,31 @@ describe('buildFormatterArgs', () => {
     const args = buildFormatterArgs('ktfmt', 'write', ['Main.kt'], [])
     expect(args[1]).toBe('--')
   })
+
+  it('should insert elide flags between formatter name and --', () => {
+    expect(
+      buildFormatterArgs('ktfmt', 'check', ['Main.kt'], [], ['--list-files'])
+    ).toEqual([
+      'ktfmt',
+      '--list-files',
+      '--',
+      '--dry-run',
+      '--set-exit-if-changed',
+      'Main.kt'
+    ])
+  })
+
+  it('should support multiple elide flags', () => {
+    expect(
+      buildFormatterArgs(
+        'javaformat',
+        'write',
+        ['Foo.java'],
+        [],
+        ['--list-files', '--verbose']
+      )
+    ).toEqual(['javaformat', '--list-files', '--verbose', '--', 'Foo.java'])
+  })
 })
 
 describe('runFormatter', () => {
@@ -114,23 +139,22 @@ describe('runFormatter', () => {
     expect(argfileArg).toBeDefined()
     expect(passedArgs).not.toContain('Main.kt')
     expect(passedArgs).not.toContain('Foo.kt')
-    // ktfmt: flags and files all go in the argfile
+    // ktfmt: only files go in the argfile (flags go in exec args)
     expect(writeFileSyncMock).toHaveBeenCalledWith(
       expect.stringContaining('format-ktfmt.txt'),
-      '--dry-run\n--set-exit-if-changed\nMain.kt\nFoo.kt',
+      'Main.kt\nFoo.kt',
       'utf-8'
     )
   })
 
   it('should call exec with elide and correct mode args', async () => {
     await runFormatter('ktfmt', 'check', ['Main.kt'], [], '/workspace')
-    // ktfmt: only @argfile follows --, flags are written into the file
+    // ktfmt: check flags are in exec args, not argfile
     const passedArgs: string[] = execMock.mock.calls[0][1]
     expect(passedArgs[0]).toBe('ktfmt')
     expect(passedArgs[1]).toBe('--')
-    expect(passedArgs[2]).toMatch(/^@.*format-ktfmt\.txt$/)
-    expect(passedArgs).not.toContain('--dry-run')
-    expect(passedArgs).not.toContain('--set-exit-if-changed')
+    expect(passedArgs).toContain('--dry-run')
+    expect(passedArgs).toContain('--set-exit-if-changed')
     expect(execMock).toHaveBeenCalledWith(
       'elide',
       expect.anything(),
@@ -153,7 +177,7 @@ describe('runFormatter', () => {
     )
   })
 
-  it('should write extraArgs into the ktfmt argfile', async () => {
+  it('should pass extraArgs in exec args for ktfmt, not in argfile', async () => {
     await runFormatter(
       'ktfmt',
       'check',
@@ -161,23 +185,38 @@ describe('runFormatter', () => {
       ['--google-style'],
       '/workspace'
     )
+    // Only files in argfile
     expect(writeFileSyncMock).toHaveBeenCalledWith(
       expect.stringContaining('format-ktfmt.txt'),
-      '--dry-run\n--set-exit-if-changed\n--google-style\nMain.kt',
+      'Main.kt',
       'utf-8'
     )
+    // Extra args in exec args
+    const passedArgs: string[] = execMock.mock.calls[0][1]
+    expect(passedArgs).toContain('--google-style')
   })
 
   it('should return the exit code', async () => {
     execMock.mockResolvedValue(1)
-    const code = await runFormatter(
+    const result = await runFormatter(
       'ktfmt',
       'check',
       ['Main.kt'],
       [],
       '/workspace'
     )
-    expect(code).toBe(1)
+    expect(result.exitCode).toBe(1)
+  })
+
+  it('should pass elide flags before -- in exec args', async () => {
+    await runFormatter('ktfmt', 'check', ['Main.kt'], [], '/workspace', [
+      '--list-files'
+    ])
+    const passedArgs: string[] = execMock.mock.calls[0][1]
+    expect(passedArgs[0]).toBe('ktfmt')
+    expect(passedArgs[1]).toBe('--list-files')
+    const dashDashIdx = passedArgs.indexOf('--')
+    expect(dashDashIdx).toBe(2)
   })
 
   it('should log a debug message with file count', async () => {

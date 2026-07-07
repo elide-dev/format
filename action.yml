@@ -56,6 +56,26 @@ inputs:
     required: false
     default: 'true'
 
+  output-mode:
+    description: >
+      Output mode after the formatter runs: none (default), file (print affected file paths),
+      diff (print patch-compatible diffs, check mode only), or command (print a fix command).
+    required: false
+    default: 'none'
+
+  output-mode-diffs:
+    description: >
+      When output-mode is diff, limit the number of files whose diffs are printed. If the number
+      of affected files exceeds this limit, falls back to listing file paths instead. Must be a
+      positive integer.
+    required: false
+
+  output-mode-command:
+    description: >
+      When output-mode is command, print this string instead of a generated elide command.
+      Intended for projects that have a pre-defined formatter command (e.g. a Makefile target).
+    required: false
+
 outputs:
   result:
     description: 'Check result: success or failure'

@@ -16,10 +16,12 @@ export function buildFormatterArgs(
   formatter: FormatterName,
   mode: FormatMode,
   files: string[],
-  extraArgs: string[]
+  extraArgs: string[],
+  elideFlags: string[] = []
 ): string[] {
   return [
     formatter,
+    ...elideFlags,
     '--',
     ...(mode === 'check' ? CHECK_FLAGS[formatter] : []),
     ...extraArgs,
@@ -32,34 +34,39 @@ export async function runFormatter(
   mode: FormatMode,
   files: string[],
   extraArgs: string[],
-  cwd: string
-): Promise<number> {
+  cwd: string,
+  elideFlags: string[] = []
+): Promise<{ exitCode: number; stdout: string }> {
   const tempDir = process.env.RUNNER_TEMP ?? os.tmpdir()
   const argfilePath = path.join(tempDir, `format-${formatter}.txt`)
 
-  let execArgs: string[]
-  if (formatter === 'ktfmt') {
-    // ktfmt requires the argfile to be the only argument after `--`, so flags go in the file
-    const checkFlags = mode === 'check' ? CHECK_FLAGS.ktfmt : []
-    writeFileSync(
-      argfilePath,
-      [...checkFlags, ...extraArgs, ...files].join('\n'),
-      'utf-8'
-    )
-    execArgs = [formatter, '--', `@${argfilePath}`]
-  } else {
-    writeFileSync(argfilePath, files.join('\n'), 'utf-8')
-    execArgs = buildFormatterArgs(
-      formatter,
-      mode,
-      [`@${argfilePath}`],
-      extraArgs
-    )
-  }
+  writeFileSync(argfilePath, files.join('\n'), 'utf-8')
+  const execArgs = buildFormatterArgs(
+    formatter,
+    mode,
+    [`@${argfilePath}`],
+    extraArgs,
+    elideFlags
+  )
+
+  let capturedStdout = ''
+  const listeners =
+    elideFlags.length > 0
+      ? {
+          stdout: (data: Buffer) => {
+            capturedStdout += data.toString()
+          }
+        }
+      : undefined
 
   core.debug(`Running: elide ${formatter} on ${files.length} files`)
   try {
-    return await exec.exec('elide', execArgs, { cwd, ignoreReturnCode: true })
+    const exitCode = await exec.exec('elide', execArgs, {
+      cwd,
+      ignoreReturnCode: true,
+      listeners
+    })
+    return { exitCode, stdout: capturedStdout }
   } finally {
     try {
       unlinkSync(argfilePath)
