@@ -195,7 +195,9 @@ export function printOutputModeResult(
   customCommand: string | null,
   extraArgs: string[] = []
 ): string | null {
-  if (outputMode === 'none' || !stdout) return null
+  if (outputMode === 'none') return null
+  if (outputMode === 'command' && customCommand) return customCommand
+  if (!stdout) return null
 
   switch (outputMode) {
     case 'file': {
@@ -402,12 +404,11 @@ export async function run(
       if (!success) {
         let message = 'Format check failed'
         if (effectiveOptions.output_mode === 'command') {
-          const failedFormatters = Object.entries(results)
-            .filter(([, code]) => code !== 0)
-            .map(([f]) => f)
           const cmds = [
             ...new Set(
-              failedFormatters.map(f => fixCommands[f] ?? `elide ${f}`)
+              formatters
+                .filter(f => results[f] !== 0)
+                .map(f => fixCommands[f] ?? `elide ${f}`)
             )
           ]
           message += `. Run locally to fix: ${cmds.join(', ')}`
