@@ -160,7 +160,7 @@ export function parseDiffOutput(stdout: string): string {
 // (e.g. --list-diffs=N limit exceeded, or write mode falls back to --list-files).
 export function isDiffOutput(stdout: string): boolean {
   const lines = stdout.split('\n').filter(l => l.trim())
-  return (
+  return !!(
     lines[0]?.startsWith('---') ||
     lines[1]?.startsWith('+++') ||
     lines[2]?.startsWith('@@')
